@@ -31,6 +31,7 @@ const CallWizard = () => {
     discProfile: '',
     howFoundUs: '',
     howFoundUsOther: '',
+    adAppeal: '',
     nameCorrect: '',
     yearsAtProperty: '',
     address: '',
@@ -135,6 +136,7 @@ const CallWizard = () => {
         [''],
         ['CALL DETAILS'],
         ['How Found Us:', formData.howFoundUs + (formData.howFoundUsOther ? ` (${formData.howFoundUsOther})` : '')],
+        ['Ad/Website Appeal:', formData.adAppeal || ''],
         ['Visited Showrooms:', formData.visitedShowrooms],
         ['Decision Timeframe:', formData.decisionTimeframe],
         ['Deep Dive Reason:', formData.deepDiveReason],
@@ -678,6 +680,40 @@ const CallWizard = () => {
                 </select>
               </div>
               
+              {formData.howFoundUs === 'Facebook' && (
+                <div>
+                  <div className="bg-white p-4 rounded border-2 border-blue-200">
+                    <p className="font-medium text-lg">
+                      "Great, and what was it about our Facebook ad that grabbed your attention?"
+                    </p>
+                  </div>
+                  <label className="block text-sm font-medium mb-2 mt-3">Facebook ad appeal:</label>
+                  <textarea
+                    value={formData.adAppeal}
+                    onChange={(e) => updateFormData('adAppeal', e.target.value)}
+                    className="w-full p-3 border rounded-lg h-20"
+                    placeholder="What grabbed their attention about the Facebook ad"
+                  />
+                </div>
+              )}
+
+              {formData.howFoundUs === 'Google' && (
+                <div>
+                  <div className="bg-white p-4 rounded border-2 border-blue-200">
+                    <p className="font-medium text-lg">
+                      "Fantastic, and was there anything in particular in our Google ad or website that really spoke to you?"
+                    </p>
+                  </div>
+                  <label className="block text-sm font-medium mb-2 mt-3">Google ad/website appeal:</label>
+                  <textarea
+                    value={formData.adAppeal}
+                    onChange={(e) => updateFormData('adAppeal', e.target.value)}
+                    className="w-full p-3 border rounded-lg h-20"
+                    placeholder="What spoke to them about the Google ad or website"
+                  />
+                </div>
+              )}
+              
               {formData.howFoundUs === 'Other' && (
                 <div>
                   <label className="block text-sm font-medium mb-2">Please specify:</label>
@@ -711,7 +747,7 @@ const CallWizard = () => {
           </div>
         );
 
-      case 6: // Icebreakers (Part 2)
+   case 6: // Icebreakers (Part 2)
         return (
           <div className="space-y-6">
             <DiscProfileBox />
