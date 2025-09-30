@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, User, Phone, MapPin, Home, Download } from 'lucide-react';
+
+const ChevronRight = () => <span>→</span>;
+const ChevronLeft = () => <span>←</span>;
+const User = () => <span>👤</span>;
+const Phone = () => <span>📞</span>;
+const MapPin = () => <span>📍</span>;
+const Home = () => <span>🏠</span>;
+const Download = () => <span>⬇️</span>;
 
 const CallWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
