@@ -211,8 +211,22 @@ const ExploreCallWizard = ({ prospectId }) => {
       prospectName={`${prospect.firstName} ${prospect.lastName}`.trim() || 'New Prospect'}
     >
       {/* NEPQ Questions Panel — position varies by step */}
-      {/* Steps with NEPQ below content: 5,6,9 (Icebreakers/DeepDive), 12 (Thickness), 15 (Stone Brands) */}
+      {/* Steps with NEPQ below content: 5,6 (Icebreakers), 15 (Stone Brands) */}
+      {/* Step 9 (Deep Dive) has NEPQ at TOP in large format */}
+      {/* Step 12 (Thickness) NEPQ is conditional — rendered below */}
       {/* Step 17 (Final Points) has NEPQ embedded directly — no panel needed */}
+
+      {/* Step 9: Deep Dive — NEPQ at top, 1.5x bigger */}
+      {currentStep === 9 && (
+        <div style={{ fontSize: '1.15em' }}>
+          <NEPQPanel
+            nepqData={nepqData}
+            responses={ec}
+            onResponseChange={handleNEPQResponse}
+          />
+        </div>
+      )}
+
       {![5, 6, 9, 12, 15, 17].includes(currentStep) && (
         <NEPQPanel
           nepqData={nepqData}
@@ -232,7 +246,16 @@ const ExploreCallWizard = ({ prospectId }) => {
         />
       )}
 
-      {[5, 6, 9, 12, 15].includes(currentStep) && (
+      {[5, 6, 9, 15].includes(currentStep) && (
+        <NEPQPanel
+          nepqData={nepqData}
+          responses={ec}
+          onResponseChange={handleNEPQResponse}
+        />
+      )}
+
+      {/* Step 12 NEPQ only shows when thickness mismatch (20mm wanted + 30-40mm existing) */}
+      {currentStep === 12 && ec.benchtopThickness === '20mm' && (ec.existingBenchtopThickness === '30-38mm' || ec.existingBenchtopThickness === '40mm') && (
         <NEPQPanel
           nepqData={nepqData}
           responses={ec}

@@ -16,6 +16,16 @@ const PrecallSetup = ({ prospect, data, update, updateBasic }) => (
     </div>
     <CheckboxGroup label="Stone Brand (Select all that apply)" values={data.stoneBrands} onChange={(v) => update('stoneBrands', v)} options={STONE_BRANDS} />
 
+    <SectionDivider title="Benchtop Type" />
+    <RadioGroup label="Replacing existing or new benchtops?" name="benchtopType" value={data.benchtopType} onChange={(v) => update('benchtopType', v)} options={['Replacing existing benchtops', 'New benchtops']} />
+
+    {data.benchtopType === 'Replacing existing benchtops' && (
+      <RadioGroup label="Existing benchtop thickness:" name="existingBenchtopThickness" value={data.existingBenchtopThickness} onChange={(v) => update('existingBenchtopThickness', v)} options={['20mm', '30-38mm', '40mm', 'Other']} />
+    )}
+    {data.benchtopType === 'Replacing existing benchtops' && data.existingBenchtopThickness === 'Other' && (
+      <TextField label="Specify existing thickness:" value={data.existingBenchtopThicknessOther} onChange={(v) => update('existingBenchtopThicknessOther', v)} placeholder="e.g. 50mm, unsure" />
+    )}
+
     <SectionDivider title="Estimator & Timing" />
     <RadioGroup label="Did the prospect use our benchtop estimator?" name="usedEstimator" value={data.usedEstimator} onChange={(v) => update('usedEstimator', v)} options={['Yes', 'No']} />
     <RadioGroup label="Key time of year (for urgency messaging)" name="seasonalTiming" value={data.seasonalTiming} onChange={(v) => update('seasonalTiming', v)} options={SEASONAL_TIMING_OPTIONS} />
@@ -262,28 +272,65 @@ const ManagedService = ({ data, update }) => (
 );
 
 // Step 12: Thickness & Splashback
-const ThicknessSplashback = ({ data, update }) => (
-  <div className="space-y-5">
-    <h2 className="text-xl font-bold text-blue-800">Thickness & Splashback</h2>
-    {(data.benchtopThickness === '20mm' || data.benchtopThickness === '40mm') ? (
-      <>
-        <ScriptBlock>
-          "I can see from your photos it looks like a 30mm top, and it looks like you'll be keeping the splashback — does that sound right?"
-        </ScriptBlock>
-        <RadioGroup label="Consider 30mm?" name="consider30mm" value={data.consider30mm} onChange={(v) => update('consider30mm', v)} options={['Yes', 'No', 'Unsure']} />
+const ThicknessSplashback = ({ data, update }) => {
+  const isNew = data.benchtopType === 'New benchtops';
+  const isExisting = data.benchtopType === 'Replacing existing benchtops';
+  const existingThick = data.existingBenchtopThickness;
+  const wantedThick = data.benchtopThickness;
 
-        <ScriptBlock>
-          "So I notice that you are looking at {data.benchtopThickness} stone options. Can I ask, are you updating the splashback as well?"
-        </ScriptBlock>
-        <RadioGroup label="Updating splashback?" name="splashbackUpdate" value={data.splashbackUpdate} onChange={(v) => update('splashbackUpdate', v)} options={['Yes', 'No']} />
-      </>
-    ) : (
-      <CoachingTip type="success">
-        Prospect selected {data.benchtopThickness || 'no thickness yet'} — no splashback concerns to address at this stage.
-      </CoachingTip>
-    )}
-  </div>
-);
+  // New benchtops — skip this section entirely
+  if (isNew) {
+    return (
+      <div className="space-y-5">
+        <h2 className="text-xl font-bold text-blue-800">Thickness & Splashback</h2>
+        <CoachingTip type="success">
+          New benchtops — no existing splashback concerns. Skip this step.
+        </CoachingTip>
+      </div>
+    );
+  }
+
+  // Existing benchtops with 30-38mm existing thickness
+  const is30to38 = existingThick === '30-38mm';
+  // Mismatch: wanting 20mm but existing is 30-40mm — NEPQ opportunity
+  const thicknessMismatch = (wantedThick === '20mm' && (existingThick === '30-38mm' || existingThick === '40mm'));
+
+  return (
+    <div className="space-y-5">
+      <h2 className="text-xl font-bold text-blue-800">Thickness & Splashback</h2>
+
+      {is30to38 && (
+        <>
+          <ScriptBlock>
+            "I can see from your photos it looks like a 30mm top, and it looks like you'll be keeping the splashback — does that sound right?"
+          </ScriptBlock>
+          <RadioGroup label="Keeping splashback?" name="keepingSplashback" value={data.keepingSplashback} onChange={(v) => update('keepingSplashback', v)} options={['Yes', 'No', 'Unsure']} />
+        </>
+      )}
+
+      {!is30to38 && (wantedThick === '20mm' || wantedThick === '40mm') && (
+        <>
+          <ScriptBlock>
+            "So I notice that you are looking at {wantedThick} stone options. Can I ask, are you updating the splashback as well?"
+          </ScriptBlock>
+          <RadioGroup label="Updating splashback?" name="splashbackUpdate" value={data.splashbackUpdate} onChange={(v) => update('splashbackUpdate', v)} options={['Yes', 'No']} />
+        </>
+      )}
+
+      {!is30to38 && wantedThick !== '20mm' && wantedThick !== '40mm' && (
+        <CoachingTip type="success">
+          Prospect selected {wantedThick || 'no thickness yet'} with existing {existingThick || 'unknown'} — no splashback concerns to address.
+        </CoachingTip>
+      )}
+
+      {thicknessMismatch && (
+        <CoachingTip type="warning">
+          <strong>Thickness mismatch:</strong> They want {wantedThick} but their existing is {existingThick}. This may cause a gap with the splashback — make sure to address this with the NEPQ question below.
+        </CoachingTip>
+      )}
+    </div>
+  );
+};
 
 // Step 13: Pricing & Timing
 const PricingTiming = ({ data, update }) => {
@@ -397,10 +444,7 @@ const SinkCooktop = ({ data, update }) => (
 // Helper: Auto-populate key points summary for Final Points
 const buildKeyPointsSummary = (data) => {
   const points = [];
-  if (data.deepDiveReason) points.push(`Reason: ${data.deepDiveReason}`);
-  if (data.nepq_biggestFrustration) points.push(`Main frustration: ${data.nepq_biggestFrustration}`);
-  if (data.nepq_idealOutcome) points.push(`Ideal outcome: ${data.nepq_idealOutcome}`);
-  if (data.nepq_selectionCriteria) points.push(`Most important factor: ${data.nepq_selectionCriteria}`);
+  // Project details first
   if (data.room) points.push(`Room: ${data.room}`);
   if (data.benchtopThickness) points.push(`Thickness: ${data.benchtopThickness}`);
   if ((data.stoneBrands || []).filter(b => b !== 'None').length > 0) {
@@ -408,6 +452,11 @@ const buildKeyPointsSummary = (data) => {
   }
   if (data.managedService) points.push(`Service: ${data.managedService}`);
   if (data.decisionPriority) points.push(`Priority: ${data.decisionPriority}`);
+  // Then their emotional drivers
+  if (data.deepDiveReason) points.push(`Reason: ${data.deepDiveReason}`);
+  if (data.nepq_biggestFrustration) points.push(`Main frustration: ${data.nepq_biggestFrustration}`);
+  if (data.nepq_idealOutcome) points.push(`Ideal outcome: ${data.nepq_idealOutcome}`);
+  if (data.nepq_selectionCriteria) points.push(`Most important factor: ${data.nepq_selectionCriteria}`);
   return points.join('\n');
 };
 

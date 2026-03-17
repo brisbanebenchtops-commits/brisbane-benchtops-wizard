@@ -17,6 +17,14 @@ export const NEPQPanel = ({ nepqData, responses, onResponseChange, exploreData }
     setUsedQuestions(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
+  // Auto-mark as used when a response has content
+  const isAutoUsed = (index) => {
+    const q = nepqData.questions?.[index];
+    if (!q) return false;
+    const resp = responses?.[q.responseField] || '';
+    return resp.trim().length > 0;
+  };
+
   return (
     <div className="border-2 border-indigo-200 rounded-xl overflow-hidden mb-5">
       {/* Header — always visible */}
@@ -61,15 +69,15 @@ export const NEPQPanel = ({ nepqData, responses, onResponseChange, exploreData }
           {/* Questions */}
           {nepqData.questions?.map((q, index) => {
             const qType = QUESTION_TYPES[q.type];
-            const isUsed = usedQuestions[index];
+            const isManualUsed = usedQuestions[index];
+            const isAuto = isAutoUsed(index);
+            const isUsed = isManualUsed || isAuto;
             const currentResponse = responses?.[q.responseField] || '';
 
             return (
               <div
                 key={index}
-                className={`border rounded-lg overflow-hidden transition-all ${
-                  isUsed ? 'opacity-60' : ''
-                } ${qType.borderColor}`}
+                className={`border rounded-lg overflow-hidden transition-all ${qType.borderColor}`}
               >
                 {/* Question header */}
                 <div className={`${qType.bgColor} px-4 py-2 flex items-center justify-between`}>
@@ -79,16 +87,15 @@ export const NEPQPanel = ({ nepqData, responses, onResponseChange, exploreData }
                       {qType.label}
                     </span>
                   </div>
-                  <button
-                    onClick={() => toggleUsed(index)}
+                  <span
                     className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                       isUsed
                         ? 'bg-green-100 border-green-300 text-green-700'
-                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        : 'bg-white border-gray-300 text-gray-500'
                     }`}
                   >
-                    {isUsed ? '✓ Used' : 'Mark Used'}
-                  </button>
+                    {isUsed ? '✓ Used' : 'Not used'}
+                  </span>
                 </div>
 
                 {/* Question text */}
