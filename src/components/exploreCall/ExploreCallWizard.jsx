@@ -210,12 +210,14 @@ const ExploreCallWizard = ({ prospectId }) => {
       exportLabel="Export Excel"
       prospectName={`${prospect.firstName} ${prospect.lastName}`.trim() || 'New Prospect'}
     >
-      {/* NEPQ Questions Panel — renders above the step content */}
-      <NEPQPanel
-        nepqData={nepqData}
-        responses={ec}
-        onResponseChange={handleNEPQResponse}
-      />
+      {/* NEPQ Questions Panel — position varies by step */}
+      {![5, 6, 9].includes(currentStep) && (
+        <NEPQPanel
+          nepqData={nepqData}
+          responses={ec}
+          onResponseChange={handleNEPQResponse}
+        />
+      )}
 
       {StepComponent && (
         <StepComponent
@@ -225,6 +227,14 @@ const ExploreCallWizard = ({ prospectId }) => {
           updateBasic={updateBasic}
           discProfile={discProfile}
           onComplete={currentStep === STEPS.length - 1 ? handleComplete : undefined}
+        />
+      )}
+
+      {[5, 6, 9].includes(currentStep) && (
+        <NEPQPanel
+          nepqData={nepqData}
+          responses={ec}
+          onResponseChange={handleNEPQResponse}
         />
       )}
     </WizardLayout>

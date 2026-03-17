@@ -141,41 +141,13 @@ export const EXPLORE_NEPQ = {
   },
 
   // Step 9: Deep Dive Reason — Problem Awareness (THIS IS THE BIG ONE)
+  // NOTE: The main frustration/pain questions are now embedded directly in the step component
+  // with conditional logic for existing vs new benchtop. The NEPQ panel here provides
+  // additional coaching and supplementary questions only.
   9: {
     stage: 'engagement',
-    coaching: "This is where NEPQ gets powerful. You're moving from Situation into Problem Awareness. Don't just accept their first answer — probe deeper with clarifying and probing questions. The goal is for THEM to feel the gap between where they are and where they want to be.",
-    questions: [
-      {
-        type: 'problemAwareness',
-        text: "What's been the biggest frustration with your current benchtop... is it more the look of it, or is it actually causing day-to-day issues?",
-        hint: "Two Truths technique — give two options so they pick one and elaborate. Use verbal pause after 'benchtop...'",
-        responseField: 'nepq_biggestFrustration'
-      },
-      {
-        type: 'problemAwareness',
-        text: "How long has that been bothering you?",
-        hint: "Clarifying question — deepens the pain. The longer it's been, the more urgency they'll feel.",
-        responseField: 'nepq_howLongBothered'
-      },
-      {
-        type: 'problemAwareness',
-        text: "And how does that affect things day-to-day... like when you're cooking or when people come over?",
-        hint: "Probing question — connects the problem to their daily life and social identity",
-        responseField: 'nepq_dailyImpact'
-      },
-      {
-        type: 'solutionAwareness',
-        text: "Have you tried to get this sorted before... or is this the first time you've seriously looked into it?",
-        hint: "Solution Awareness Part 1 — uncovers past failed attempts. If they've tried before, ask what stopped them.",
-        responseField: 'nepq_triedBefore'
-      },
-      {
-        type: 'solutionAwareness',
-        text: "What stopped you from moving forward at that point?",
-        hint: "Only ask if they've looked before. Reveals objections they've already overcome internally.",
-        responseField: 'nepq_whatStopped'
-      }
-    ]
+    coaching: "This is where NEPQ gets powerful. You're in Problem Awareness. Don't just accept their first answer — probe deeper. The goal is for THEM to feel the gap between where they are and where they want to be. The key questions are built into the step above — use these extras if the conversation calls for it.",
+    questions: []
   },
 
   // Step 10: Job Type — Solution Awareness

@@ -41,5 +41,6 @@ export const ACCESS_TYPES = ['Lowset', 'Stairs', 'Townhouse', 'Elevator', 'Other
 export const SINK_TYPES = ['Drop in', 'Undermount', 'Farmer Style', 'Topmount', 'Semirecessed'];
 export const COOKTOP_TYPES = ['Drop in', 'Free standing hob'];
 export const HOW_FOUND_OPTIONS = ['Facebook', 'Google', 'Business Referral', 'Friend or Family Referral', 'Other'];
+export const SEASONAL_TIMING_OPTIONS = ['Easter', 'End of Financial Year', 'Spring', 'Christmas'];
 
 export const STORAGE_KEY = 'bb_wizard_prospects';
