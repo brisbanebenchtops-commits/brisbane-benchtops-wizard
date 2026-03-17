@@ -45,6 +45,8 @@ const ProposalOpening = ({ prospect, exploreData, data, update, discProfile }) =
 
       <TextField label="Proposal URL (SM8 link):" value={data.proposalUrl} onChange={(v) => update('proposalUrl', v)} placeholder="Paste the ServiceM8 proposal URL" />
 
+      <RadioGroup label="Is benchtop removal included?" name="removalIncluded" value={data.removalIncluded} onChange={(v) => update('removalIncluded', v)} options={['Yes', 'No']} />
+
       {discProfile && (
         <CoachingTip type="info">
           <strong>DISC Reminder:</strong> {disc.proposalAdvice[0]}
@@ -78,9 +80,13 @@ const ProposalOpening = ({ prospect, exploreData, data, update, discProfile }) =
       <ScriptBlock>"Have you had any other thoughts about what you want since our last conversation?"</ScriptBlock>
       <TextArea label="New thoughts:" value={data.nepq_newThoughtsSinceLast} onChange={(v) => update('nepq_newThoughtsSinceLast', v)} placeholder="Any new ideas or changes?" rows={2} />
 
-      {/* Quick reference from Explore Call */}
+      <SectionDivider title="Explore Call Summary" />
+
+      <ScriptBlock>
+        "Just to summarise, last time we caught up you were looking for..."
+      </ScriptBlock>
+
       <div className="bg-gray-50 p-4 rounded-lg border text-sm">
-        <h4 className="font-medium text-gray-700 mb-2">Explore Call Summary:</h4>
         <div className="grid grid-cols-2 gap-2 text-gray-600">
           <p><strong>Room:</strong> {exploreData.room}</p>
           <p><strong>Thickness:</strong> {exploreData.benchtopThickness}</p>
@@ -90,8 +96,14 @@ const ProposalOpening = ({ prospect, exploreData, data, update, discProfile }) =
           <p><strong>Timeframe:</strong> {exploreData.decisionTimeframe}</p>
           <p><strong>Decision priority:</strong> {exploreData.decisionPriority}</p>
           <p><strong>Additional Stone:</strong> {exploreData.additionalStoneWanted}</p>
+          {exploreData.nepq_biggestFrustration && <p><strong>Main frustration:</strong> {exploreData.nepq_biggestFrustration}</p>}
+          {exploreData.nepq_idealOutcome && <p><strong>Ideal outcome:</strong> {exploreData.nepq_idealOutcome}</p>}
+          {exploreData.nepq_selectionCriteria && <p><strong>Most important factor:</strong> {exploreData.nepq_selectionCriteria}</p>}
         </div>
       </div>
+
+      <ScriptBlock>"Did I miss anything?"</ScriptBlock>
+      <TextArea label="Anything missed:" value={data.missedAnything} onChange={(v) => update('missedAnything', v)} placeholder="Did they add or correct anything?" rows={2} />
     </div>
   );
 };
@@ -193,11 +205,6 @@ const ValueFraming = ({ data, update, exploreData, discProfile }) => {
           onResponse={(field, val) => update(field, val)}
         />
       )}
-
-      <ScriptBlock>
-        "As you scroll through, does what you see so far feel like it aligns with what you told me was important — {exploreData.decisionPriority === 'Getting it right' ? 'getting it done right' : 'getting good value'}?"
-      </ScriptBlock>
-      <TextArea label="Their response to value framing:" value={data.valueFramingResponse} onChange={(v) => update('valueFramingResponse', v)} placeholder="How did they respond?" rows={2} />
 
       <ScriptBlock>
         "The section that I would like focus on for a moment is the value that we offer, and why choose Brisbane Benchtops."
@@ -486,27 +493,31 @@ const AddedBonuses1 = ({ data, update, exploreData }) => {
           <TextArea className="mt-2" label="Response:" value={data.bonus1Response} onChange={(v) => update('bonus1Response', v)} placeholder="Their reaction" rows={1} />
         </div>
 
-        {/* NEPQ Q2 → Bonus 2 */}
-        <InlineNEPQ
-          type="problemAwareness"
-          text="If you had to organise the benchtop removal yourself... do you know how you'd go about that?"
-          hint="Ask BEFORE Bonus 2 (removal included). Most people have no idea — reveals the hidden complexity."
-          responseField="nepq_selfRemoval"
-          response={data.nepq_selfRemoval}
-          onResponse={(f, v) => update(f, v)}
-        />
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <h4 className="font-semibold text-green-800">Bonus 2: Removal included</h4>
-          <ScriptBlock>
-            "Your benchtop removal is included in the investment. Most competitors ask the customer to remove it and won't provide this service."
-          </ScriptBlock>
-          {hasQuotes ? (
-            <CoachingTip type="warning">Ask: "What did their quote say about the removal, do you remember?"</CoachingTip>
-          ) : (
-            <CoachingTip type="info">This is important for them to look for in other quotes.</CoachingTip>
-          )}
-          <TextArea className="mt-2" label="Response:" value={data.bonus2Response} onChange={(v) => update('bonus2Response', v)} placeholder="Their reaction" rows={1} />
-        </div>
+        {/* NEPQ Q2 → Bonus 2 — only show if benchtop removal is included */}
+        {data.removalIncluded === 'Yes' && (
+          <>
+            <InlineNEPQ
+              type="problemAwareness"
+              text="If you had to organise the benchtop removal yourself... do you know how you'd go about that?"
+              hint="Ask BEFORE Bonus 2 (removal included). Most people have no idea — reveals the hidden complexity."
+              responseField="nepq_selfRemoval"
+              response={data.nepq_selfRemoval}
+              onResponse={(f, v) => update(f, v)}
+            />
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-green-800">Bonus 2: Removal included</h4>
+              <ScriptBlock>
+                "Your benchtop removal is included in the investment. Most competitors ask the customer to remove it and won't provide this service."
+              </ScriptBlock>
+              {hasQuotes ? (
+                <CoachingTip type="warning">Ask: "What did their quote say about the removal, do you remember?"</CoachingTip>
+              ) : (
+                <CoachingTip type="info">This is important for them to look for in other quotes.</CoachingTip>
+              )}
+              <TextArea className="mt-2" label="Response:" value={data.bonus2Response} onChange={(v) => update('bonus2Response', v)} placeholder="Their reaction" rows={1} />
+            </div>
+          </>
+        )}
 
         {/* NEPQ Q3 → Bonus 3 */}
         <InlineNEPQ
@@ -803,11 +814,36 @@ const Close = ({ prospect, data, update, discProfile }) => {
 // ═══════════════════════════════════════════════════════════════
 // Step 11: Call Outcome
 // ═══════════════════════════════════════════════════════════════
-const CallOutcome = ({ prospect, data, update, onComplete }) => (
+const CallOutcome = ({ prospect, data, update, onComplete }) => {
+  // Auto-populate outcome from Close step's acceptanceStatus if not manually set
+  const autoOutcome = (() => {
+    if (data.outcome) return data.outcome;
+    switch (data.acceptanceStatus) {
+      case 'Accepted on call': return 'accepted';
+      case 'Will accept later today': return 'pending';
+      case 'Needs time to think': return 'pending';
+      case 'Wants to get other quotes': return 'deferred';
+      case 'Declined': return 'declined';
+      default: return '';
+    }
+  })();
+
+  // Set it if auto-detected and not already set
+  if (autoOutcome && !data.outcome) {
+    update('outcome', autoOutcome);
+  }
+
+  return (
   <div className="space-y-5">
     <h2 className="text-xl font-bold text-blue-800">Call Outcome</h2>
 
-    <SelectField label="Call outcome:" value={data.outcome} onChange={(v) => update('outcome', v)}
+    {data.acceptanceStatus && (
+      <CoachingTip type="info">
+        Auto-populated from Close step: <strong>{data.acceptanceStatus}</strong>
+      </CoachingTip>
+    )}
+
+    <SelectField label="Call outcome:" value={data.outcome || autoOutcome} onChange={(v) => update('outcome', v)}
       options={[
         { value: 'accepted', label: 'Accepted - Won!' },
         { value: 'pending', label: 'Pending - Following up' },
@@ -848,15 +884,16 @@ const CallOutcome = ({ prospect, data, update, onComplete }) => (
         <a href="/" className="inline-block mt-2 text-sm text-blue-600 hover:underline">Back to Dashboard</a>
       </div>
     ) : (
-      <button onClick={onComplete} disabled={!data.outcome}
+      <button onClick={onComplete} disabled={!(data.outcome || autoOutcome)}
         className={`w-full py-3 rounded-lg font-medium transition-colors ${
-          data.outcome ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          (data.outcome || autoOutcome) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}>
         ✓ Complete Proposal Call
       </button>
     )}
   </div>
-);
+  );
+};
 
 export const ProposalSteps = [
   ProposalOpening, SurplusStoneFollowup, ValueFraming, Guarantees,
