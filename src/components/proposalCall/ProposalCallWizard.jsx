@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useProspect } from '../../context/AppContext';
+import { useProspect, useApp } from '../../context/AppContext';
 import { WizardLayout } from '../wizard/WizardLayout';
 import { inferDiscProfile, checkHighSkepticism } from '../../lib/disc/profiles';
 import { PIPELINE_STAGES } from '../../lib/utils/constants';
@@ -24,6 +24,7 @@ const STEPS = [
 
 const ProposalCallWizard = ({ prospectId }) => {
   const { prospect, updateProspect, updateProposalCall } = useProspect(prospectId);
+  const { dispatch } = useApp();
   const ec = prospect?.exploreCall || {};
   const pc = prospect?.proposalCall || {};
   const [currentStep, setCurrentStep] = useState(pc.currentStep || 0);
@@ -59,16 +60,25 @@ const ProposalCallWizard = ({ prospectId }) => {
   };
 
   const handleComplete = () => {
-    updateProposalCall('status', 'completed');
-    updateProposalCall('completedAt', new Date().toISOString());
+    // Single dispatch to avoid stale closure overwriting previous updates
+    if (!prospect) return;
     const outcome = pc.outcome;
-    if (outcome === 'accepted') {
-      updateProspect({ pipelineStage: PIPELINE_STAGES.WON });
-    } else if (outcome === 'declined') {
-      updateProspect({ pipelineStage: PIPELINE_STAGES.LOST });
-    } else {
-      updateProspect({ pipelineStage: PIPELINE_STAGES.PROPOSAL_COMPLETED });
-    }
+    let newStage = PIPELINE_STAGES.PROPOSAL_COMPLETED;
+    if (outcome === 'accepted') newStage = PIPELINE_STAGES.WON;
+    else if (outcome === 'declined') newStage = PIPELINE_STAGES.LOST;
+
+    dispatch({
+      type: 'UPDATE_PROSPECT',
+      payload: {
+        ...prospect,
+        pipelineStage: newStage,
+        proposalCall: {
+          ...prospect.proposalCall,
+          status: 'completed',
+          completedAt: new Date().toISOString()
+        }
+      }
+    });
   };
 
   // Determine which objection helpers to show based on current step and data

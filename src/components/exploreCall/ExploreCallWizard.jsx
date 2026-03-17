@@ -166,9 +166,20 @@ const ExploreCallWizard = ({ prospectId }) => {
   };
 
   const handleComplete = () => {
-    updateExploreCall('status', 'completed');
-    updateExploreCall('completedAt', new Date().toISOString());
-    updateProspect({ pipelineStage: PIPELINE_STAGES.EXPLORE_COMPLETED });
+    // Must do a single dispatch to avoid stale closure overwriting previous updates
+    if (!prospect) return;
+    dispatch({
+      type: 'UPDATE_PROSPECT',
+      payload: {
+        ...prospect,
+        pipelineStage: PIPELINE_STAGES.EXPLORE_COMPLETED,
+        exploreCall: {
+          ...prospect.exploreCall,
+          status: 'completed',
+          completedAt: new Date().toISOString()
+        }
+      }
+    });
   };
 
   if (!prospect) {
