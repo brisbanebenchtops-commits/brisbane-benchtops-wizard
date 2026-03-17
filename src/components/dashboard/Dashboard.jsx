@@ -201,7 +201,8 @@ const ProspectCard = ({ prospect, onNavigate, dispatch }) => {
   const discProfile = ec.discProfile || inferDiscProfile(ec.energyLevel, ec.friendly, ec.leadTopics);
   const discData = discProfile ? getDiscData(discProfile) : null;
 
-  const getAction = () => {
+  // Primary action button
+  const getPrimaryAction = () => {
     if (ec.status !== 'completed') {
       return { label: 'Continue Explore Call', path: `/explore/${prospect.id}`, color: 'bg-blue-600 hover:bg-blue-700' };
     }
@@ -211,10 +212,12 @@ const ProspectCard = ({ prospect, onNavigate, dispatch }) => {
     if (pc.outcome === 'pending' || pc.outcome === 'deferred') {
       return { label: 'Review Proposal', path: `/proposal/${prospect.id}`, color: 'bg-orange-600 hover:bg-orange-700' };
     }
-    return { label: 'View Details', path: `/explore/${prospect.id}`, color: 'bg-gray-600 hover:bg-gray-700' };
+    return null;
   };
 
-  const action = getAction();
+  const primaryAction = getPrimaryAction();
+  const exploreCompleted = ec.status === 'completed';
+  const proposalExists = pc.status === 'completed' || pc.status === 'in-progress';
 
   return (
     <div className="bg-white rounded-xl border shadow-sm p-4 hover:shadow-md transition-shadow">
@@ -264,12 +267,30 @@ const ProspectCard = ({ prospect, onNavigate, dispatch }) => {
           >
             🗑️
           </button>
+
+          {/* Always show Explore Call button once it exists */}
           <button
-            onClick={() => onNavigate(action.path)}
-            className={`px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors ${action.color}`}
+            onClick={() => onNavigate(`/explore/${prospect.id}`)}
+            className={`px-3 py-2 text-white rounded-lg text-xs font-medium transition-colors ${
+              !exploreCompleted ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-500 hover:bg-gray-600'
+            }`}
           >
-            {action.label}
+            {exploreCompleted ? 'View Explore' : 'Continue Explore'}
           </button>
+
+          {/* Show Proposal Call button once explore is completed */}
+          {exploreCompleted && (
+            <button
+              onClick={() => onNavigate(`/proposal/${prospect.id}`)}
+              className={`px-3 py-2 text-white rounded-lg text-xs font-medium transition-colors ${
+                pc.status === 'completed'
+                  ? 'bg-gray-500 hover:bg-gray-600'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              {pc.status === 'completed' ? 'View Proposal' : (proposalExists ? 'Continue Proposal' : 'Start Proposal')}
+            </button>
+          )}
         </div>
       </div>
     </div>
