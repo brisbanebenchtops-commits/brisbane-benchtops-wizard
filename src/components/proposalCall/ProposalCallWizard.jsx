@@ -133,14 +133,7 @@ const ProposalCallWizard = ({ prospectId }) => {
       {/* Explore Call NEPQ Summary — collapsible reference of their words */}
       <ExploreCallNEPQSummary exploreData={ec} />
 
-      {/* NEPQ Questions Panel — renders above the step content */}
-      <NEPQPanel
-        nepqData={nepqData}
-        responses={pc}
-        onResponseChange={handleNEPQResponse}
-        exploreData={ec}
-      />
-
+      {/* NEPQ is now interwoven directly into each step component */}
       {StepComponent && (
         <StepComponent
           prospect={prospect}
