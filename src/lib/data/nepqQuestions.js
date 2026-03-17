@@ -225,7 +225,9 @@ export const EXPLORE_NEPQ = {
         type: 'solutionAwareness',
         text: "When you've made big decisions like this before — renovations, cars, whatever — what's usually most important to you... getting it right, or getting it cheap?",
         hint: "Anchors them to quality over price. Their answer becomes your leverage in the Proposal Call.",
-        responseField: 'nepq_decisionStyle'
+        responseField: 'nepq_decisionStyle',
+        radioField: 'decisionPriority',
+        radioOptions: ['Getting it right', 'Getting it cheap']
       }
     ]
   },
@@ -259,23 +261,12 @@ export const EXPLORE_NEPQ = {
   },
 
   // Step 17: Final Points — Transition
+  // NEPQ questions are embedded directly in the Final Points step component
+  // with auto-populated key points injected between question and response
   17: {
     stage: 'transition',
     coaching: "This is the NEPQ Transition. You've done the 85% Engagement work. Now you're bridging to the Proposal Call. Summarise what you've heard — use THEIR words, not yours — and set up the next call as the natural next step.",
-    questions: [
-      {
-        type: 'transition',
-        text: "Based on everything you've shared with me today... it sounds like the main things you're looking for are [summarise their key points]. Did I get that right?",
-        hint: "Transition recap — confirm you understand. Use their exact words where possible. This builds massive trust.",
-        responseField: 'nepq_transitionSummary'
-      },
-      {
-        type: 'transition',
-        text: "Is there anything else that's important to you that we haven't covered?",
-        hint: "Opens the floor one last time — prevents 'I forgot to mention...' objections later",
-        responseField: 'nepq_anythingElse'
-      }
-    ]
+    questions: []
   }
 };
 

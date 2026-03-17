@@ -144,17 +144,15 @@ export const WizardLayout = ({
 
         {/* Right: Sticky DISC Sidebar */}
         {discProfile && (
-          <div className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-4">
-              <DiscSidebar profile={discProfile} context={subtitle} />
-            </div>
+          <div className="hidden md:block w-64 shrink-0 self-start" style={{ position: 'sticky', top: '1rem' }}>
+            <DiscSidebar profile={discProfile} context={subtitle} />
           </div>
         )}
       </div>
 
       {/* DISC panel for small screens (below content) */}
       {discProfile && (
-        <div className="lg:hidden mt-4">
+        <div className="md:hidden mt-4">
           <DiscSidebar profile={discProfile} context={subtitle} />
         </div>
       )}

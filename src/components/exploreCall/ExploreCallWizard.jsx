@@ -211,7 +211,9 @@ const ExploreCallWizard = ({ prospectId }) => {
       prospectName={`${prospect.firstName} ${prospect.lastName}`.trim() || 'New Prospect'}
     >
       {/* NEPQ Questions Panel — position varies by step */}
-      {![5, 6, 9].includes(currentStep) && (
+      {/* Steps with NEPQ below content: 5,6,9 (Icebreakers/DeepDive), 12 (Thickness), 15 (Stone Brands) */}
+      {/* Step 17 (Final Points) has NEPQ embedded directly — no panel needed */}
+      {![5, 6, 9, 12, 15, 17].includes(currentStep) && (
         <NEPQPanel
           nepqData={nepqData}
           responses={ec}
@@ -230,7 +232,7 @@ const ExploreCallWizard = ({ prospectId }) => {
         />
       )}
 
-      {[5, 6, 9].includes(currentStep) && (
+      {[5, 6, 9, 12, 15].includes(currentStep) && (
         <NEPQPanel
           nepqData={nepqData}
           responses={ec}

@@ -102,6 +102,28 @@ export const NEPQPanel = ({ nepqData, responses, onResponseChange, exploreData }
                     </p>
                   )}
 
+                  {/* Radio options (if applicable) */}
+                  {q.radioOptions && q.radioField && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {q.radioOptions.map((opt) => {
+                        const radioValue = responses?.[q.radioField] || '';
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => onResponseChange(q.radioField, opt)}
+                            className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                              radioValue === opt
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Response field */}
                   <div className="mt-3">
                     <label className="block text-xs font-medium text-gray-500 mb-1">

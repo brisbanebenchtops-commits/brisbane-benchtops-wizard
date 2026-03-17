@@ -64,7 +64,7 @@ const Introduction = ({ data }) => (
   <div className="space-y-5">
     <h2 className="text-xl font-bold text-blue-800">Introduction</h2>
     <ScriptBlock>
-      "Do you mind if I outline the steps of our call? [PAUSE] First, I'll ask some background questions to understand your needs, then review what you've provided, ask some detailed questions, and finally explain the next steps. It is not a sales pitch and will be brief (e.g., 10-15 minutes). The process is thorough to ensure the best outcome, and not to waste your time."
+      "Do you mind if I outline the steps of our call? [PAUSE] First, I'll ask some background questions to understand your needs, then review what you've provided, ask lots of detailed questions, and finally explain the next steps. It is not a sales pitch and will be brief (e.g., 10-15 minutes) but that is really driven by you and how much information you want to share. The process is thorough to ensure the best outcome, and not to waste your time."
     </ScriptBlock>
     <ScriptBlock>
       "Also, just so you know, if I go quiet at any point it's just because I'm taking down lots of notes — I want to make sure I capture everything properly."
@@ -120,7 +120,7 @@ const Icebreakers1 = ({ prospect, data, update }) => {
 };
 
 // Step 6: Icebreakers Part 2
-const Icebreakers2 = ({ prospect, data, update }) => (
+const Icebreakers2 = ({ prospect, data, update, updateBasic }) => (
   <div className="space-y-5">
     <h2 className="text-xl font-bold text-blue-800">Icebreakers (Part 2)</h2>
     <ScriptBlock>
@@ -130,7 +130,7 @@ const Icebreakers2 = ({ prospect, data, update }) => (
     <ScriptBlock>
       "So can tell me a bit about the property, in fact do you mind if I grab the address so I can pull it up on Google/realestate.com.au? It's just going to help me get a feel for your home, like its age and outlook."
     </ScriptBlock>
-    <TextField label="Property Address:" value={prospect.address} onChange={(v) => update('address', v)} placeholder="Enter full property address" />
+    <TextField label="Property Address:" value={prospect.address} onChange={(v) => updateBasic('address', v)} placeholder="Enter full property address" />
     <ScriptBlock>
       "Oh, so your home's the one that is [X]. That's a nice [Y] (Queenslander etc). Would you describe it as your forever home, a rental, what's the story?"
     </ScriptBlock>
@@ -215,9 +215,22 @@ const DeepDiveReason = ({ data, update }) => (
     )}
 
     <ScriptBlock>"Have you tried to get this sorted before... or is this the first time you've seriously looked into it?"</ScriptBlock>
-    <TextArea label="Tried before:" value={data.nepq_triedBefore} onChange={(v) => update('nepq_triedBefore', v)} placeholder="Have they looked into this before?" rows={2} />
-    <ScriptBlock>"What stopped you from moving forward at that point?"</ScriptBlock>
-    <TextArea label="What stopped them:" value={data.nepq_whatStopped} onChange={(v) => update('nepq_whatStopped', v)} placeholder="What prevented them from going ahead" rows={2} />
+    <RadioGroup label="Tried before?" name="triedBefore" value={data.triedBefore} onChange={(v) => update('triedBefore', v)} options={['Yes', 'No — first time']} />
+
+    {data.triedBefore === 'Yes' && (
+      <>
+        <TextArea label="What did they try:" value={data.nepq_triedBefore} onChange={(v) => update('nepq_triedBefore', v)} placeholder="What did they look into or try before?" rows={2} />
+        <ScriptBlock>"What stopped you from moving forward at that point?"</ScriptBlock>
+        <TextArea label="What stopped them:" value={data.nepq_whatStopped} onChange={(v) => update('nepq_whatStopped', v)} placeholder="What prevented them from going ahead" rows={2} />
+      </>
+    )}
+
+    {data.triedBefore === 'No — first time' && (
+      <>
+        <ScriptBlock>"So what's made now the right time to finally look into it?"</ScriptBlock>
+        <TextArea label="Why now:" value={data.nepq_whyNow} onChange={(v) => update('nepq_whyNow', v)} placeholder="What triggered them to start looking now" rows={2} />
+      </>
+    )}
   </div>
 );
 
@@ -263,13 +276,6 @@ const ThicknessSplashback = ({ data, update }) => (
           "So I notice that you are looking at {data.benchtopThickness} stone options. Can I ask, are you updating the splashback as well?"
         </ScriptBlock>
         <RadioGroup label="Updating splashback?" name="splashbackUpdate" value={data.splashbackUpdate} onChange={(v) => update('splashbackUpdate', v)} options={['Yes', 'No']} />
-
-        <ScriptBlock>
-          "Have you seen what happens when a 20mm benchtop meets an existing splashback... that gap can be a real issue. Were you aware of that?"
-        </ScriptBlock>
-        <CoachingTip type="info">
-          Elaborate on the gap issue between benchtop and splashback (20mm), or having to sit the benchtop in front of the existing splashback (40mm). This is an opportunity to discuss 30mm.
-        </CoachingTip>
       </>
     ) : (
       <CoachingTip type="success">
@@ -313,12 +319,6 @@ const PricingTiming = ({ data, update }) => {
           "Ok, so as you've already found by filling in the web form, there's a lot in the process of getting a benchtop. It's like buying a car, you're not making one decision you're making dozens. But that's what we're here for, to help you. [PAUSE FOR RESPONSE] Just so as you know, stone is generally priced in 5 different price ranges, but we can talk about that a bit later."
         </ScriptBlock>
       )}
-
-      <ScriptBlock>
-        "When you've made big decisions like this before — renovations, cars, whatever — what's usually most important to you... getting it right, or getting it cheap?"
-      </ScriptBlock>
-      <RadioGroup label="What matters most?" name="decisionPriority" value={data.decisionPriority} onChange={(v) => update('decisionPriority', v)} options={['Getting it right', 'Getting it cheap']} />
-      <TextArea label="Decision style notes:" value={data.nepq_decisionStyle} onChange={(v) => update('nepq_decisionStyle', v)} placeholder="Any additional notes about how they make decisions" rows={2} />
 
       <ScriptBlock>{urgencyMessage}</ScriptBlock>
     </div>
@@ -364,11 +364,6 @@ const StoneBrands = ({ data, update }) => (
           "I see that you have nominated {(data.stoneBrands || []).filter(b => b !== 'Other').join(', ')}, are you familiar with any other brands?"
         </ScriptBlock>
         <RadioGroup label="Familiar with other brands?" name="familiarWithOtherBrands" value={data.familiarWithOtherBrands} onChange={(v) => update('familiarWithOtherBrands', v)} options={['Yes', 'No']} />
-
-        <ScriptBlock>
-          "What is it about that particular stone that appeals to you... is it the look, something you've seen online, or did someone recommend it?"
-        </ScriptBlock>
-        <TextArea label="Stone appeal reason:" value={data.nepq_stoneAppeal} onChange={(v) => update('nepq_stoneAppeal', v)} placeholder="What appeals to them about their stone choice" rows={2} />
 
         <ScriptBlock>
           "Yeah, that is a great looking stone, that choice. Are you also open to looking at similar stones from alternative brands that may be more cost effective?"
@@ -424,23 +419,66 @@ const FinalPoints = ({ prospect, data, update, onComplete }) => {
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-blue-800">Final Points</h2>
 
-      <ScriptBlock>
-        "Based on everything you've shared with me today... it sounds like the main things you're looking for are:"
-      </ScriptBlock>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-medium text-blue-800 mb-2">Auto-populated Key Points (use their words where possible):</h4>
-        <pre className="text-sm text-blue-700 whitespace-pre-wrap font-sans">{autoSummary || 'Complete earlier steps to auto-populate...'}</pre>
+      {/* NEPQ Transition Question 1 — with auto-populated key points */}
+      <div className="border rounded-lg overflow-hidden border-purple-300">
+        <div className="bg-purple-50 px-4 py-2 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+          <span className="text-xs font-bold uppercase tracking-wide text-purple-800">Transition</span>
+        </div>
+        <div className="px-4 py-3">
+          <p className="font-medium text-gray-800 text-base leading-relaxed">
+            "Based on everything you've shared with me today... it sounds like the main things you're looking for are:"
+          </p>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-3">
+            <p className="text-xs font-semibold text-purple-700 mb-1">Auto-populated Key Points (read these back using their words):</p>
+            <pre className="text-sm text-purple-800 whitespace-pre-wrap font-sans">{autoSummary || 'Complete earlier steps to auto-populate...'}</pre>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 italic flex items-start gap-1">
+            <span>📝</span> Confirm you understand by using their exact words. This builds massive trust.
+          </p>
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Their response:</label>
+            <textarea value={data.nepq_transitionSummary || ''} onChange={(e) => update('nepq_transitionSummary', e.target.value)} placeholder="Jot down what they said..." rows={2} className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50" />
+          </div>
+        </div>
       </div>
-      <TextArea label="Edit/refine the summary in your own words:" value={data.transitionSummary} onChange={(v) => update('transitionSummary', v)} placeholder="Refine this summary using the prospect's own words..." rows={4} />
-      <ScriptBlock>"Did I get that right?"</ScriptBlock>
+
+      {/* NEPQ Transition Question 2 — anything else */}
+      <div className="border rounded-lg overflow-hidden border-purple-300">
+        <div className="bg-purple-50 px-4 py-2 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+          <span className="text-xs font-bold uppercase tracking-wide text-purple-800">Transition</span>
+        </div>
+        <div className="px-4 py-3">
+          <p className="font-medium text-gray-800 text-base leading-relaxed">
+            "Is there anything else that's important to you that we haven't covered?"
+          </p>
+          <p className="text-xs text-gray-500 mt-2 italic flex items-start gap-1">
+            <span>📝</span> Opens the floor one last time — prevents "I forgot to mention..." objections later
+          </p>
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Their response:</label>
+            <textarea value={data.nepq_anythingElse || ''} onChange={(e) => update('nepq_anythingElse', e.target.value)} placeholder="Jot down what they said..." rows={2} className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50" />
+          </div>
+        </div>
+      </div>
 
       <ScriptBlock>
         "So based on all of that, I have a really clear picture of what you need. [PAUSE] My next step is to narrow your options down to the best two that fit what you're after, and work out the pricing with the suppliers. Then we'll have a quick Proposal call where I'll walk you through my recommendations and you can ask me anything. [PAUSE] How does that sound?"
       </ScriptBlock>
       <ScriptBlock>
-        "From there, you'll just need to see the stone in person to make your final colour and pattern decision. [PAUSE] So when works best for that call — {data.proposalCallDay1Time || '[PROPOSAL DAY & TIME 1]'}, or {data.proposalCallDay2Time || '[PROPOSAL DAY & TIME 2]'}?"
+        "From there, you'll just need to see the stone in person to make your final colour and pattern decision. [PAUSE] So when works best for that call?"
       </ScriptBlock>
+
+      <SectionDivider title="Proposal Call Time" />
+      <RadioGroup label="Proposal call time:" name="proposalCallTimeChoice" value={data.proposalCallTimeChoice} onChange={(v) => update('proposalCallTimeChoice', v)} options={[
+        data.proposalCallDay1Time || 'Option 1 (set in Precall)',
+        data.proposalCallDay2Time || 'Option 2 (set in Precall)',
+        'Other'
+      ]} />
+      {data.proposalCallTimeChoice === 'Other' && (
+        <TextField label="Other time:" value={data.proposalCallOtherTime} onChange={(v) => update('proposalCallOtherTime', v)} placeholder="Enter the agreed proposal call time" />
+      )}
 
       {data.status === 'completed' ? (
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
