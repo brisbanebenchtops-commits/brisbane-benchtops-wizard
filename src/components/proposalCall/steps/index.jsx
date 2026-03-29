@@ -4,7 +4,7 @@ import { getDiscData } from '../../../lib/disc/profiles';
 import { QUESTION_TYPES } from '../../../lib/data/nepqQuestions';
 
 // ═══════════════════════════════════════════════════════════════
-// Inline NEPQ Question Component (for interweaving with step content)
+// Inline NEPQ Question Component
 // ═══════════════════════════════════════════════════════════════
 const InlineNEPQ = ({ type, text, hint, responseField, response, onResponse }) => {
   const qType = QUESTION_TYPES[type] || QUESTION_TYPES.situation;
@@ -38,6 +38,15 @@ const InlineNEPQ = ({ type, text, hint, responseField, response, onResponse }) =
 const ProposalOpening = ({ prospect, exploreData, data, update, discProfile }) => {
   const disc = getDiscData(discProfile);
   const painPoint = exploreData.nepq_biggestFrustration || exploreData.deepDiveReason || '';
+
+  // Pull benchtops-only / unsure reason from Explore Call
+  const benchtopsOnlyFlag = exploreData.managedService === 'Benchtops Only';
+  const unsureFlag = exploreData.managedService === 'Unsure';
+  const showServiceFollowUp = benchtopsOnlyFlag || unsureFlag;
+  const serviceFollowUpReason = benchtopsOnlyFlag
+    ? exploreData.benchtopsOnlyReason
+    : exploreData.managedServiceUnsureReason;
+  const serviceLabel = benchtopsOnlyFlag ? 'Why they only wanted a benchtops price' : 'Why they were unsure about managed service';
 
   return (
     <div className="space-y-5">
@@ -77,8 +86,57 @@ const ProposalOpening = ({ prospect, exploreData, data, update, discProfile }) =
       )}
       <TextArea label="Their response:" value={data.nepq_reconnectPain} onChange={(v) => update('nepq_reconnectPain', v)} placeholder="Has anything changed since the Explore Call?" rows={2} />
 
-      <ScriptBlock>"Have you had any other thoughts about what you want since our last conversation?"</ScriptBlock>
+      {/* CHANGED: "other thoughts" → "new thoughts" */}
+      <ScriptBlock>"Have you had any new thoughts about what you want since our last conversation?"</ScriptBlock>
       <TextArea label="New thoughts:" value={data.nepq_newThoughtsSinceLast} onChange={(v) => update('nepq_newThoughtsSinceLast', v)} placeholder="Any new ideas or changes?" rows={2} />
+
+      {/* ── Benchtops Only / Unsure carry-through from Explore Call ── */}
+      {showServiceFollowUp && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm font-semibold text-amber-800 mb-1">📋 From Explore Call — {serviceLabel}:</p>
+          <p className="text-sm text-amber-700 italic whitespace-pre-wrap">
+            {serviceFollowUpReason || '(No reason recorded — check notes)'}
+          </p>
+          <CoachingTip type="info">
+            Use this context to address their hesitation around the managed service before moving forward.
+          </CoachingTip>
+        </div>
+      )}
+
+      {/* ── Trades Question ── */}
+      <SectionDivider title="Trades" />
+
+      <RadioGroup
+        label="Trades status:"
+        name="tradesStatus"
+        value={data.tradesStatus}
+        onChange={(v) => update('tradesStatus', v)}
+        options={['Did you still want to use your own trades', 'Have you decided to use your own trades']}
+      />
+
+      {data.tradesStatus === 'Did you still want to use your own trades' && (
+        <div className="space-y-3">
+          <ScriptBlock>
+            "You mentioned you wanted to use your own trades, have you talked to them? They can be hard to get, so I was curious to see how it's going?"
+          </ScriptBlock>
+          <TextArea label="Their response:" value={data.tradesResponse} onChange={(v) => update('tradesResponse', v)} placeholder="How are they going with their own trades?" rows={2} />
+          <ScriptBlock>
+            "Just a reminder that we can take all that hassle out for you — just make it smooth, easy, quick as possible. The less inconvenience for you."
+          </ScriptBlock>
+        </div>
+      )}
+
+      {data.tradesStatus === 'Have you decided to use your own trades' && (
+        <div className="space-y-3">
+          <ScriptBlock>
+            "Have you talked to them? They can be hard to get, so I was curious to see how it's going?"
+          </ScriptBlock>
+          <TextArea label="Their response:" value={data.tradesResponse} onChange={(v) => update('tradesResponse', v)} placeholder="How are they going with their own trades?" rows={2} />
+          <ScriptBlock>
+            "Just a reminder that we can take all that hassle out for you — just make it smooth, easy, quick as possible. The less inconvenience for you."
+          </ScriptBlock>
+        </div>
+      )}
 
       <SectionDivider title="Explore Call Summary" />
 
@@ -143,18 +201,27 @@ const SurplusStoneFollowup = ({ exploreData, data, update }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// Step 2: Value Framing (with NEPQ dropdown selector)
+// Step 2: Value Framing
+// CHANGED: NEPQ auto-selects based on decisionPriority from Explore Call
+// CHANGED: Removed DISC Reminder coaching tip (too prescriptive)
 // ═══════════════════════════════════════════════════════════════
 const ValueFraming = ({ data, update, exploreData, discProfile }) => {
   const disc = getDiscData(discProfile);
   const canSee = data.canSeeProposal === 'Yes - Computer' || data.canSeeProposal === 'Yes - Phone';
-  const [selectedNepq, setSelectedNepq] = useState('');
 
   const nepqOptions = [
     { value: 'cheapRegret', type: 'problemAwareness', text: "Have you ever gone with the cheapest option on something... and then ended up regretting it or paying more to fix it later?", hint: "PAUSE after asking. Let the silence do the work. Their answer is more powerful than any pitch.", responseField: 'nepq_cheapRegret' },
     { value: 'priceVsQuality', type: 'solutionAwareness', text: "So when it comes to your benchtops... what matters most to you — getting the lowest price, or knowing it's done right and you won't have headaches down the track?", hint: "Anchoring question — whichever they pick, you win.", responseField: 'nepq_priceVsQuality' }
   ];
 
+  // AUTO-SELECT based on Explore Call decisionPriority
+  const autoSelect = (() => {
+    if (exploreData.decisionPriority === 'Getting it right') return 'priceVsQuality';
+    if (exploreData.decisionPriority === 'Getting it cheap') return 'cheapRegret';
+    return '';
+  })();
+
+  const [selectedNepq, setSelectedNepq] = useState(autoSelect);
   const selectedQ = nepqOptions.find(q => q.value === selectedNepq);
 
   return (
@@ -180,7 +247,15 @@ const ValueFraming = ({ data, update, exploreData, discProfile }) => {
       </ScriptBlock>
 
       <SectionDivider title="NEPQ Value Question" />
-      <CoachingTip type="info">Pick the question that feels most natural for this prospect:</CoachingTip>
+
+      {autoSelect && exploreData.decisionPriority && (
+        <CoachingTip type="success">
+          Auto-selected based on their Explore Call answer: <strong>"{exploreData.decisionPriority}"</strong>
+        </CoachingTip>
+      )}
+      {!autoSelect && (
+        <CoachingTip type="info">Pick the question that feels most natural for this prospect:</CoachingTip>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Choose a NEPQ question to ask:</label>
@@ -214,7 +289,8 @@ const ValueFraming = ({ data, update, exploreData, discProfile }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// Step 3: Five Guarantees (NEPQ interwoven)
+// Step 3: Five Guarantees
+// CHANGED: Added "In case you haven't noticed I'm very proud of our guarantees"
 // ═══════════════════════════════════════════════════════════════
 const Guarantees = ({ data, update, discProfile }) => {
   const disc = getDiscData(discProfile);
@@ -319,7 +395,8 @@ const Guarantees = ({ data, update, discProfile }) => {
         />
       </div>
 
-      <ScriptBlock>"Do you have any questions about any of your 5 guarantees?"</ScriptBlock>
+      {/* CHANGED: added pride statement before question */}
+      <ScriptBlock>"In case you haven't noticed I'm very proud of our guarantees. Do you have any questions about any of your 5 guarantees?"</ScriptBlock>
       <TextArea label="Questions:" value={data.guaranteesQuestions} onChange={(v) => update('guaranteesQuestions', v)} placeholder="Any questions about the guarantees?" rows={2} />
     </div>
   );
@@ -327,6 +404,9 @@ const Guarantees = ({ data, update, discProfile }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // Step 4: Competitor Check
+// CHANGED: Split opening script, added t&c's question, kitchen downtime question,
+//          "read between the lines" moved to its own separate question,
+//          consistent "quote" (theirs) vs "proposal" (ours) language
 // ═══════════════════════════════════════════════════════════════
 const CompetitorCheck = ({ data, update, discProfile }) => {
   const disc = getDiscData(discProfile);
@@ -334,8 +414,9 @@ const CompetitorCheck = ({ data, update, discProfile }) => {
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-blue-800">Competitor Check</h2>
 
+      {/* CHANGED: Removed "I'd like to possibly help you understand..." from this opening script */}
       <ScriptBlock>
-        "Have you received any other quotes in writing? I'd like to possibly help you understand what's written and what's not, to read between the lines."
+        "Have you received any other quotes in writing?"
       </ScriptBlock>
 
       <RadioGroup label="Has other quotes?" name="hasOtherQuotes" value={data.hasOtherQuotes} onChange={(v) => update('hasOtherQuotes', v)} options={['Yes', 'No']} />
@@ -343,7 +424,14 @@ const CompetitorCheck = ({ data, update, discProfile }) => {
       {data.hasOtherQuotes === 'Yes' && (
         <>
           <ScriptBlock>"How did it look? Was it as comprehensive as your proposal?"</ScriptBlock>
-          <TextArea label="Competitor quote impression:" value={data.competitorImpression} onChange={(v) => update('competitorImpression', v)} placeholder="How did their quote compare to yours?" rows={2} />
+          <TextArea label="Competitor quote impression:" value={data.competitorImpression} onChange={(v) => update('competitorImpression', v)} placeholder="How did their quote compare to your proposal?" rows={2} />
+
+          {/* NEW: T&C's question */}
+          <ScriptBlock>"Just out of curiosity, what are their t&c's like?"</ScriptBlock>
+          <TextArea label="Their t&c's:" value={data.competitorTCs} onChange={(v) => update('competitorTCs', v)} placeholder="What are the competitor's terms and conditions like?" rows={2} />
+
+          {/* CHANGED: Now its own separate question */}
+          <ScriptBlock>"I'd like to possibly help you understand what's written and what's not, to read between the lines."</ScriptBlock>
 
           <InlineNEPQ
             type="problemAwareness"
@@ -362,6 +450,10 @@ const CompetitorCheck = ({ data, update, discProfile }) => {
             response={data.nepq_confidenceFactor}
             onResponse={(f, v) => update(f, v)}
           />
+
+          {/* NEW: Kitchen downtime question when they have other quotes */}
+          <ScriptBlock>"And have you looked at how long you are going to be without a functional kitchen?"</ScriptBlock>
+          <TextArea label="Kitchen downtime awareness:" value={data.competitorKitchenDowntimeAwareness} onChange={(v) => update('competitorKitchenDowntimeAwareness', v)} placeholder="Are they aware of the downtime with the competitor?" rows={2} />
 
           {discProfile && (
             <CoachingTip type="info">
@@ -397,6 +489,10 @@ const CompetitorCheck = ({ data, update, discProfile }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // Step 5: Competitor Deep Dive
+// CHANGED: warranty question rewritten, added t&c's/terms questions,
+//          kitchen downtime now has "specific or vague" + follow-up,
+//          removal question updated, family cost question added,
+//          removed "how important is it wrapped up quickly" (too manipulative)
 // ═══════════════════════════════════════════════════════════════
 const CompetitorDeepDive = ({ data, update, discProfile }) => {
   const hasQuotes = data.hasOtherQuotes === 'Yes';
@@ -416,14 +512,25 @@ const CompetitorDeepDive = ({ data, update, discProfile }) => {
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-blue-800">Competitor Deep Dive</h2>
 
+      {/* CHANGED: Warranty question rewritten entirely */}
       <InlineNEPQ
         type="problemAwareness"
-        text="Did their quote spell out exactly what happens if something goes wrong... like who covers the warranty on each trade?"
+        text="When you looked at their quote, did it give you any clarity on who is responsible for the warranty if something goes wrong with one of the trades?"
         hint="Most competitors don't specify this. When they realise it's missing, your QBCC license becomes gold."
         responseField="nepq_competitorWarranty"
         response={data.nepq_competitorWarranty}
         onResponse={(f, v) => update(f, v)}
       />
+      <CoachingTip type="warning">
+        "You're going to have to ask every trade for their warranties."
+      </CoachingTip>
+
+      {/* NEW: T&C's and terms questions */}
+      <ScriptBlock>"And did you read all of their terms and conditions?"</ScriptBlock>
+      <TextArea label="T&C's read:" value={data.competitorTCsRead} onChange={(v) => update('competitorTCsRead', v)} placeholder="Did they read all the terms?" rows={2} />
+
+      <ScriptBlock>"Did they write in any 'subject to' clauses?"</ScriptBlock>
+      <TextArea label="Subject to clauses:" value={data.competitorSubjectToClauses} onChange={(v) => update('competitorSubjectToClauses', v)} placeholder="What clauses were included?" rows={2} />
 
       <InlineNEPQ
         type="consequence"
@@ -434,9 +541,6 @@ const CompetitorDeepDive = ({ data, update, discProfile }) => {
         onResponse={(f, v) => update(f, v)}
       />
 
-      <ScriptBlock>"Did they write in any 'subject to' clauses?"</ScriptBlock>
-      <TextArea label="Subject to clauses:" value={data.competitorSubjectToClauses} onChange={(v) => update('competitorSubjectToClauses', v)} placeholder="What clauses were included?" rows={2} />
-
       <ScriptBlock>"Did they talk to you about access to your property?"</ScriptBlock>
       <TextArea label="Access discussed:" value={data.competitorAccessDiscussed} onChange={(v) => update('competitorAccessDiscussed', v)} placeholder="Did they ask about access?" rows={2} />
 
@@ -444,11 +548,20 @@ const CompetitorDeepDive = ({ data, update, discProfile }) => {
         "If you remember, in the Explore Call, I asked you what the access was like, and looked at your home on Google from the street. If other companies don't do that, then that's a potential concern because their hidden extras can kick in as a result of any assumptions."
       </CoachingTip>
 
-      <ScriptBlock>"Did they tell you how long you'd be without your kitchen?"</ScriptBlock>
+      {/* CHANGED: Added "was it specific or was it a bit vague" + follow-up question */}
+      <ScriptBlock>"Did they tell you how long you'd be without your kitchen? Was it specific or was it a bit vague?"</ScriptBlock>
       <TextArea label="Kitchen downtime:" value={data.competitorKitchenDowntime} onChange={(v) => update('competitorKitchenDowntime', v)} placeholder="What did they say?" rows={2} />
 
-      <ScriptBlock>"What did they say about the removal of your benchtop?"</ScriptBlock>
-      <TextArea label="Removal:" value={data.competitorRemovalIncluded} onChange={(v) => update('competitorRemovalIncluded', v)} placeholder="Was removal included?" rows={2} />
+      <ScriptBlock>"Is that just the benchtop, or is that actually the whole functional kitchen including plumbing and electrical?"</ScriptBlock>
+      <TextArea label="Scope of downtime:" value={data.competitorDowntimeScope} onChange={(v) => update('competitorDowntimeScope', v)} placeholder="Just the benchtop, or the whole kitchen?" rows={2} />
+
+      {/* NEW: Family cost consideration */}
+      <ScriptBlock>"Have you given consideration to the cost to your family for extra days without a functional kitchen?"</ScriptBlock>
+      <TextArea label="Family cost consideration:" value={data.familyCostConsideration} onChange={(v) => update('familyCostConsideration', v)} placeholder="Their thoughts on the impact to the family..." rows={2} />
+
+      {/* CHANGED: Added "was it just pulling it off the cabinets or just taking it away?" */}
+      <ScriptBlock>"What did they say about the removal of your benchtop? Was it just pulling it off the cabinets, or was it actually taking it away?"</ScriptBlock>
+      <TextArea label="Removal:" value={data.competitorRemovalIncluded} onChange={(v) => update('competitorRemovalIncluded', v)} placeholder="Was removal included? What exactly?" rows={2} />
 
       <ScriptBlock>"What's their sequence? For example, when are they getting their trades in?"</ScriptBlock>
       <TextArea label="Trade sequence:" value={data.competitorTradeSequence} onChange={(v) => update('competitorTradeSequence', v)} placeholder="What's their process?" rows={2} />
@@ -459,7 +572,8 @@ const CompetitorDeepDive = ({ data, update, discProfile }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// Step 6: Added Bonuses 1-3 (NEPQ interwoven)
+// Step 6: Added Bonuses 1-3
+// CHANGED: Removed "How important is it wrapped up quickly" NEPQ (too manipulative)
 // ═══════════════════════════════════════════════════════════════
 const AddedBonuses1 = ({ data, update, exploreData }) => {
   const hasQuotes = data.hasOtherQuotes === 'Yes';
@@ -519,15 +633,7 @@ const AddedBonuses1 = ({ data, update, exploreData }) => {
           </>
         )}
 
-        {/* NEPQ Q3 → Bonus 3 */}
-        <InlineNEPQ
-          type="solutionAwareness"
-          text="How important is it to you that the whole thing is wrapped up quickly and doesn't drag on?"
-          hint="Ask BEFORE Bonus 3 (minimal disruption). Calibrates how much this matters to them."
-          responseField="nepq_speedImportance"
-          response={data.nepq_speedImportance}
-          onResponse={(f, v) => update(f, v)}
-        />
+        {/* CHANGED: Removed "How important is it that the whole thing is wrapped up quickly" NEPQ — too manipulative */}
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <h4 className="font-semibold text-green-800">Bonus 3: Minimal disruption</h4>
           <ScriptBlock>
@@ -546,7 +652,10 @@ const AddedBonuses1 = ({ data, update, exploreData }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// Step 7: Added Bonuses 4-7 (NEPQ interwoven)
+// Step 7: Added Bonuses 4-7
+// CHANGED: Removed business owner/PM sentence from Bonus 5
+// CHANGED: "hours cleaning up their mess" → "time cleaning up their mess"
+// CHANGED: Closing question updated to include guarantees + bonuses together
 // ═══════════════════════════════════════════════════════════════
 const AddedBonuses2 = ({ data, update }) => {
   const hasQuotes = data.hasOtherQuotes === 'Yes';
@@ -579,10 +688,11 @@ const AddedBonuses2 = ({ data, update }) => {
           <TextArea className="mt-2" label="Response:" value={data.bonus4Response} onChange={(v) => update('bonus4Response', v)} placeholder="Their reaction" rows={1} />
         </div>
 
+        {/* CHANGED: Removed "You'll be dealing with me because I'm the business owner, the customer service officer and the project manager." */}
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <h4 className="font-semibold text-green-800">Bonus 5: Local company, personal service</h4>
           <ScriptBlock>
-            "You'll be dealing with a local company, not an impersonal national or multi-national corporation. If you have any challenges after our service, we are only a phone call away. You'll be dealing with me because I'm the business owner, the customer service officer and the project manager."
+            "You'll be dealing with a local company, not an impersonal national or multi-national corporation. If you have any challenges after our service, we are only a phone call away."
           </ScriptBlock>
           <TextArea className="mt-2" label="Response:" value={data.bonus5Response} onChange={(v) => update('bonus5Response', v)} placeholder="Their reaction" rows={1} />
         </div>
@@ -600,10 +710,10 @@ const AddedBonuses2 = ({ data, update }) => {
           <TextArea className="mt-2" label="Response:" value={data.bonus6Response} onChange={(v) => update('bonus6Response', v)} placeholder="Their reaction" rows={1} />
         </div>
 
-        {/* NEPQ Q2 → Bonus 7 */}
+        {/* NEPQ Q2 → Bonus 7 — CHANGED: "hours cleaning up their mess" → "time cleaning up their mess" */}
         <InlineNEPQ
           type="problemAwareness"
-          text="Have you ever had a tradie do work on your home and then had to spend hours cleaning up their mess?"
+          text="Have you ever had a tradie do work on your home and then had to spend time cleaning up their mess?"
           hint="Ask BEFORE Bonus 7 (clean up included). Almost everyone has this story."
           responseField="nepq_cleanupMess"
           response={data.nepq_cleanupMess}
@@ -619,8 +729,9 @@ const AddedBonuses2 = ({ data, update }) => {
         </div>
       </div>
 
-      <ScriptBlock>"So that's our 7 added bonuses. Do you have any questions about any of them?"</ScriptBlock>
-      <TextArea label="Bonus questions:" value={data.bonusQuestions} onChange={(v) => update('bonusQuestions', v)} placeholder="Any questions about the bonuses?" rows={2} />
+      {/* CHANGED: Question now covers both guarantees AND bonuses together */}
+      <ScriptBlock>"So that's our 7 added bonuses. How do you feel about our 5 guarantees and 7 bonuses?"</ScriptBlock>
+      <TextArea label="Bonus questions:" value={data.bonusQuestions} onChange={(v) => update('bonusQuestions', v)} placeholder="How do they feel about the guarantees and bonuses?" rows={2} />
 
       <ScriptBlock>
         "I recommend you look for these with any other quotes if you want to go down that path."
@@ -630,7 +741,9 @@ const AddedBonuses2 = ({ data, update }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// Step 8: Value Summary (NEPQ merged, auto-populated)
+// Step 8: Value Summary
+// CHANGED: Removed "So based on everything we've talked about... does this feel like it ticks the boxes"
+//          REPLACED with: write-down box to reflect their words back → then "When you look at everything together..."
 // ═══════════════════════════════════════════════════════════════
 const ValueSummary = ({ data, update, exploreData, discProfile }) => {
   const disc = getDiscData(discProfile);
@@ -652,14 +765,28 @@ const ValueSummary = ({ data, update, exploreData, discProfile }) => {
         </div>
       </div>
 
-      <InlineNEPQ
-        type="transition"
-        text={`So based on everything we've talked about... the ${criteria}, the ${painPoint}, and the ${idealOutcome}... does this feel like it ticks the boxes for what you're looking for?`}
-        hint="Reflect their own words back. This is 'present without presenting.'"
-        responseField="nepq_valueConfirmation"
-        response={data.nepq_valueConfirmation}
-        onResponse={(f, v) => update(f, v)}
-      />
+      {/* CHANGED: Replaced InlineNEPQ "does this tick the boxes" with a reflect-back write box */}
+      <div className="border rounded-lg overflow-hidden border-purple-300">
+        <div className="bg-purple-50 px-4 py-2 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+          <span className="text-xs font-bold uppercase tracking-wide text-purple-800">Present Without Presenting</span>
+        </div>
+        <div className="px-4 py-3 space-y-3">
+          <p className="text-xs text-gray-500 italic flex items-start gap-1">
+            <span>📝</span> Use their own words from the Explore Call to reflect back what matters to them. Don't present — just reflect.
+          </p>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Write their key words to reflect back:</label>
+            <textarea
+              value={data.reflectBackWords || ''}
+              onChange={(e) => update('reflectBackWords', e.target.value)}
+              placeholder="e.g. 'You mentioned it had to be done quickly because of Christmas, and you didn't want the hassle of chasing trades...'"
+              rows={3}
+              className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50"
+            />
+          </div>
+        </div>
+      </div>
 
       <ScriptBlock>
         "When you look at everything together — the guarantees, the bonuses, the speed of the work, and the fact that it's all in writing... does that give you the kind of peace of mind you were looking for?"
@@ -684,7 +811,8 @@ const ValueSummary = ({ data, update, exploreData, discProfile }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// Step 9: Option Presentation (options above NEPQ, merged question)
+// Step 9: Option Presentation
+// CHANGED: Removed "On a scale of 1 to 10" NEPQ question
 // ═══════════════════════════════════════════════════════════════
 const OptionPresentation = ({ prospect, data, update, discProfile }) => {
   const disc = getDiscData(discProfile);
@@ -719,7 +847,6 @@ const OptionPresentation = ({ prospect, data, update, discProfile }) => {
         "Option 1 gives you {data.option1Stone || '[stone type]'} and your investment for that is {data.option1Price || '$...'}. Option 2 is with your choice of {data.option2Stone || '[stone type]'} and your investment is {data.option2Price || '$...'}."
       </ScriptBlock>
 
-      {/* NEPQ merged — "Which one fits best" replaces the old separate question */}
       <InlineNEPQ
         type="commitment"
         text="Which one fits best with what you had in mind?"
@@ -731,15 +858,7 @@ const OptionPresentation = ({ prospect, data, update, discProfile }) => {
 
       <RadioGroup label="Which option did they lean towards?" name="selectedOption" value={data.selectedOption} onChange={(v) => update('selectedOption', v)} options={['Option 1', 'Option 2', 'Undecided', 'Neither']} />
 
-      {/* Readiness scale */}
-      <InlineNEPQ
-        type="commitment"
-        text="On a scale of 1 to 10... where 10 means 'let's get this done'... where are you sitting right now?"
-        hint="If 7+, ask 'what would make it a 10?' If under 7, ask 'what's holding you back?'"
-        responseField="nepq_readinessScale"
-        response={data.nepq_readinessScale}
-        onResponse={(f, v) => update(f, v)}
-      />
+      {/* REMOVED: "On a scale of 1 to 10" NEPQ — removed per feedback */}
 
       <TextArea label="Their response:" value={data.optionResponse} onChange={(v) => update('optionResponse', v)} placeholder="What did they say about the options?" rows={3} />
 
@@ -754,6 +873,10 @@ const OptionPresentation = ({ prospect, data, update, discProfile }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // Step 10: Close
+// CHANGED: "get things underway" → "get things started"
+// CHANGED: Added next steps explanation question
+// CHANGED: Next steps now in bullet-point format using "you" language
+// ADDED: Proposal valid for 30 days note
 // ═══════════════════════════════════════════════════════════════
 const Close = ({ prospect, data, update, discProfile }) => {
   const disc = getDiscData(discProfile);
@@ -779,16 +902,38 @@ const Close = ({ prospect, data, update, discProfile }) => {
         onResponse={(f, v) => update(f, v)}
       />
 
+      {/* CHANGED: "underway" → "started" */}
       <ScriptBlock>
-        "And to get it underway, you just need to click Accept on the web page to get things underway."
+        "And to get it underway, you just need to click Accept on the web page to get things started."
       </ScriptBlock>
 
+      {/* NEW: Next steps explanation offer */}
       <ScriptBlock>
-        "That activates a notification message to me, and from there I'd send you the deposit invoice. It has the instructions of how to pay. Then once your payment has been received, I will talk to my trades to work out when we can start, and then I'll come back with a start date. And then the dates that follow after that."
+        "Do you mind if I explain what the next steps are to get your benchtops underway and what that looks like?"
       </ScriptBlock>
 
+      {/* CHANGED: Next steps now in bullet-point format using "you" throughout */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-semibold text-blue-800 mb-3">Next Steps — walk them through this:</h4>
+        <ol className="space-y-2 text-sm text-blue-900">
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">1.</span><span>After <strong>you</strong> hit Accept, <strong>you</strong> will receive an invoice.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">2.</span><span><strong>You</strong> pay the deposit using the instructions in the invoice.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">3.</span><span><strong>You</strong> will hear from us confirming we have reached out to trades with tentative dates.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">4.</span><span>Later, <strong>you</strong> will receive another email confirming your exact dates.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">5.</span><span><strong>You</strong> need to be ready for us to come on the template day — <strong>you</strong> will be asked lots of questions and shown our template before your benchtop goes into production.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">6.</span><span><strong>You</strong> will have the trades on site the day before benchtop removal to disconnect everything.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">7.</span><span><strong>You</strong> will see us the next day to take away the old benchtop.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">8.</span><span><strong>Your</strong> new benchtop arrives the following day.</span></li>
+          <li className="flex gap-2"><span className="font-bold text-blue-600 min-w-[20px]">9.</span><span><strong>Your</strong> tradies will be back on site the following day to fit off — and then <strong>you</strong> are all done!</span></li>
+        </ol>
+      </div>
+
+      {/* NEW: 30-day validity note */}
+      <CoachingTip type="info">
+        <strong>Reminder:</strong> Let them know the proposal is valid for <strong>30 days</strong> from today.
+      </CoachingTip>
       <ScriptBlock>
-        "So in summary, we'd love to do your job, so when you're ready, we can get it underway, so you can start enjoying your new benchtop."
+        "Just so you know, your proposal is valid for 30 days — so you have plenty of time to look it over and compare, but we do book out, so the sooner you're ready the better."
       </ScriptBlock>
 
       <RadioGroup label="Acceptance status:" name="acceptanceStatus" value={data.acceptanceStatus} onChange={(v) => update('acceptanceStatus', v)}
@@ -815,7 +960,6 @@ const Close = ({ prospect, data, update, discProfile }) => {
 // Step 11: Call Outcome
 // ═══════════════════════════════════════════════════════════════
 const CallOutcome = ({ prospect, data, update, onComplete }) => {
-  // Auto-populate outcome from Close step's acceptanceStatus if not manually set
   const autoOutcome = (() => {
     if (data.outcome) return data.outcome;
     switch (data.acceptanceStatus) {
@@ -828,70 +972,69 @@ const CallOutcome = ({ prospect, data, update, onComplete }) => {
     }
   })();
 
-  // Set it if auto-detected and not already set
   if (autoOutcome && !data.outcome) {
     update('outcome', autoOutcome);
   }
 
   return (
-  <div className="space-y-5">
-    <h2 className="text-xl font-bold text-blue-800">Call Outcome</h2>
+    <div className="space-y-5">
+      <h2 className="text-xl font-bold text-blue-800">Call Outcome</h2>
 
-    {data.acceptanceStatus && (
-      <CoachingTip type="info">
-        Auto-populated from Close step: <strong>{data.acceptanceStatus}</strong>
-      </CoachingTip>
-    )}
+      {data.acceptanceStatus && (
+        <CoachingTip type="info">
+          Auto-populated from Close step: <strong>{data.acceptanceStatus}</strong>
+        </CoachingTip>
+      )}
 
-    <SelectField label="Call outcome:" value={data.outcome || autoOutcome} onChange={(v) => update('outcome', v)}
-      options={[
-        { value: 'accepted', label: 'Accepted - Won!' },
-        { value: 'pending', label: 'Pending - Following up' },
-        { value: 'declined', label: 'Declined - Lost' },
-        { value: 'deferred', label: 'Deferred - Getting other quotes' }
-      ]}
-      placeholder="Select outcome"
-    />
+      <SelectField label="Call outcome:" value={data.outcome || autoOutcome} onChange={(v) => update('outcome', v)}
+        options={[
+          { value: 'accepted', label: 'Accepted - Won!' },
+          { value: 'pending', label: 'Pending - Following up' },
+          { value: 'declined', label: 'Declined - Lost' },
+          { value: 'deferred', label: 'Deferred - Getting other quotes' }
+        ]}
+        placeholder="Select outcome"
+      />
 
-    {(data.outcome === 'pending' || data.outcome === 'deferred') && (
-      <TextField label="Follow-up date:" value={data.followUpDate} onChange={(v) => update('followUpDate', v)} placeholder="e.g. Next Tuesday 2pm" />
-    )}
+      {(data.outcome === 'pending' || data.outcome === 'deferred') && (
+        <TextField label="Follow-up date:" value={data.followUpDate} onChange={(v) => update('followUpDate', v)} placeholder="e.g. Next Tuesday 2pm" />
+      )}
 
-    <TextArea label="Follow-up notes:" value={data.followUpNotes} onChange={(v) => update('followUpNotes', v)} placeholder="Key things to remember for follow-up" rows={3} />
+      <TextArea label="Follow-up notes:" value={data.followUpNotes} onChange={(v) => update('followUpNotes', v)} placeholder="Key things to remember for follow-up" rows={3} />
 
-    <TextArea label="General call notes:" value={data.callNotes} onChange={(v) => update('callNotes', v)} placeholder="Any other observations from the call" rows={4} />
+      <TextArea label="General call notes:" value={data.callNotes} onChange={(v) => update('callNotes', v)} placeholder="Any other observations from the call" rows={4} />
 
-    {/* Summary card */}
-    <div className="bg-gray-50 p-4 rounded-lg border">
-      <h4 className="font-medium text-gray-700 mb-2">Call Summary</h4>
-      <div className="text-sm text-gray-600 space-y-1">
-        <p><strong>Prospect:</strong> {prospect.firstName} {prospect.lastName}</p>
-        <p><strong>Option selected:</strong> {data.selectedOption || 'None yet'}</p>
-        <p><strong>Acceptance:</strong> {data.acceptanceStatus || 'Not discussed'}</p>
-        <p><strong>Outcome:</strong> {data.outcome || 'Not set'}</p>
-        {data.followUpDate && <p><strong>Follow-up:</strong> {data.followUpDate}</p>}
+      {/* Summary card */}
+      <div className="bg-gray-50 p-4 rounded-lg border">
+        <h4 className="font-medium text-gray-700 mb-2">Call Summary</h4>
+        <div className="text-sm text-gray-600 space-y-1">
+          <p><strong>Prospect:</strong> {prospect.firstName} {prospect.lastName}</p>
+          <p><strong>Option selected:</strong> {data.selectedOption || 'None yet'}</p>
+          <p><strong>Acceptance:</strong> {data.acceptanceStatus || 'Not discussed'}</p>
+          <p><strong>Outcome:</strong> {data.outcome || 'Not set'}</p>
+          {data.followUpDate && <p><strong>Follow-up:</strong> {data.followUpDate}</p>}
+        </div>
       </div>
+
+      {data.status === 'completed' ? (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h3 className="text-lg font-medium text-green-800 mb-1">
+            {data.outcome === 'accepted' ? '🎉 Won!' : 'Proposal Call Complete ✓'}
+          </h3>
+          <p className="text-green-700 text-sm">
+            Call outcome recorded for {prospect.firstName} {prospect.lastName}.
+          </p>
+          <a href="/" className="inline-block mt-2 text-sm text-blue-600 hover:underline">Back to Dashboard</a>
+        </div>
+      ) : (
+        <button onClick={onComplete} disabled={!(data.outcome || autoOutcome)}
+          className={`w-full py-3 rounded-lg font-medium transition-colors ${
+            (data.outcome || autoOutcome) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}>
+          ✓ Complete Proposal Call
+        </button>
+      )}
     </div>
-
-    {data.status === 'completed' ? (
-      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-        <h3 className="text-lg font-medium text-green-800 mb-1">
-          {data.outcome === 'accepted' ? '🎉 Won!' : 'Proposal Call Complete ✓'}
-        </h3>
-        <p className="text-green-700 text-sm">
-          Call outcome recorded for {prospect.firstName} {prospect.lastName}.
-        </p>
-        <a href="/" className="inline-block mt-2 text-sm text-blue-600 hover:underline">Back to Dashboard</a>
-      </div>
-    ) : (
-      <button onClick={onComplete} disabled={!(data.outcome || autoOutcome)}
-        className={`w-full py-3 rounded-lg font-medium transition-colors ${
-          (data.outcome || autoOutcome) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        }`}>
-        ✓ Complete Proposal Call
-      </button>
-    )}
-  </div>
   );
 };
 
