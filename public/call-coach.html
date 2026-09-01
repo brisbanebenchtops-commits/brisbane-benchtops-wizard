@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explore Call Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F2F3F1; --panel:#FFFFFF; --sunk:#EAECE9;
+  --ink:#191C1A; --mute:#6A716C; --line:#DEE2DD;
+  --accent:#2D5B7A; --open:#B3541E; --open-soft:#FBEDE4;
+  --done:#2F6B45; --done-soft:#E6F1EA;
+  --alert:#A32B2B; --alert-soft:#FBE9E9;
+  --shadow:0 1px 2px rgba(25,28,26,.06),0 4px 14px rgba(25,28,26,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181A; --panel:#1E2124; --sunk:#191C1E;
+    --ink:#E9EBE8; --mute:#959B96; --line:#2D3134;
+    --accent:#8FBDDC; --open:#E5975F; --open-soft:#32241A;
+    --done:#74C495; --done-soft:#1A2C22;
+    --alert:#E88585; --alert-soft:#331C1C;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181A; --panel:#1E2124; --sunk:#191C1E;
+  --ink:#E9EBE8; --mute:#959B96; --line:#2D3134;
+  --accent:#8FBDDC; --open:#E5975F; --open-soft:#32241A;
+  --done:#74C495; --done-soft:#1A2C22;
+  --alert:#E88585; --alert-soft:#331C1C;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px;line-height:1.45}
+.app{max-width:1180px;margin:0 auto;padding:18px 18px 26px;
+  display:flex;flex-direction:column;gap:16px;min-height:100vh}
+.bar{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.brand{font-family:Archivo,sans-serif;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand span{color:var(--mute);font-weight:500}
+.timer{font-family:Archivo,sans-serif;font-weight:600;font-size:19px;
+  font-variant-numeric:tabular-nums;margin-left:auto}
+.mic{display:flex;align-items:center;gap:8px;font-family:Archivo,sans-serif;font-size:12px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
+.live .dot{background:var(--open);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live .dot{animation:none}}
+button{font-family:Archivo,sans-serif;font-weight:600;font-size:14px;padding:9px 18px;
+  border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  cursor:pointer;transition:border-color .15s,color .15s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.go{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button.go:hover{opacity:.88;color:var(--panel)}
+.cols{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;flex:1;align-items:start}
+@media (max-width:820px){.cols{grid-template-columns:1fr}}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.colhead{padding:13px 18px;border-bottom:1px solid var(--line);background:var(--sunk);
+  display:flex;align-items:baseline;gap:10px}
+.colhead h2{margin:0;font-family:Archivo,sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase}
+.colhead .hint{font-size:12.5px;color:var(--mute)}
+.colbody{padding:12px;display:flex;flex-direction:column;gap:9px;min-height:220px}
+.empty{color:var(--mute);font-size:14px;padding:26px 8px;text-align:center;line-height:1.6}
+.sig{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--panel);
+  border-radius:9px;padding:11px 13px;animation:in .28s cubic-bezier(.2,.7,.3,1)}
+.sig.lang{border-left-color:var(--alert);background:var(--alert-soft)}
+@keyframes in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.sig{animation:none}}
+.sig .do{font-weight:600;font-size:16.5px;line-height:1.35;text-wrap:balance}
+.sig .heard{margin-top:5px;font-size:13px;color:var(--mute);font-style:italic}
+.sig .at{font-family:Archivo,sans-serif;font-size:11px;font-weight:600;color:var(--mute);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.gap{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;
+  background:var(--open-soft);border:1px solid transparent;cursor:pointer;font-size:15.5px;
+  font-weight:500;text-align:left;width:100%;color:var(--ink);
+  font-family:"IBM Plex Sans",sans-serif;transition:opacity .2s}
+.gap:hover{border-color:var(--open);color:var(--ink)}
+.gap .box{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--open);
+  flex:0 0 auto;display:grid;place-items:center;font-size:11px;color:var(--panel)}
+.gap.p2{background:transparent;border-color:var(--line)}
+.gap.p2 .box{border-color:var(--mute)}
+.gap.done{background:var(--done-soft);opacity:.55}
+.gap.done .box{background:var(--done);border-color:var(--done)}
+.gap.done .label{text-decoration:line-through;text-decoration-thickness:1.5px}
+.gate{border-radius:12px;padding:15px 20px;border:1px solid var(--line);background:var(--panel);
+  box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.gate.hot{background:var(--alert-soft);border-color:var(--alert)}
+.gate.clear{background:var(--done-soft);border-color:var(--done)}
+.gate .k{font-family:Archivo,sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--mute)}
+.gate .msg{font-weight:600;font-size:16px}
+.gate.hot .msg{color:var(--alert)}
+.gate.clear .msg{color:var(--done)}
+.foot{font-size:13px;color:var(--mute);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <div class="brand">Explore Call Coach <span>&nbsp;Brisbane Benchtops</span></div>
+    <div class="mic" id="micwrap"><span class="dot"></span><span id="micstate">Not listening</span></div>
+    <button class="go" id="startbtn">Start call</button>
+    <button id="resetbtn">Reset</button>
+    <div class="timer" id="timer">00:00</div>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <div class="colhead"><h2>What they said</h2><span class="hint">do this now</span></div>
+      <div class="colbody" id="sigs">
+        <div class="empty" id="sigempty">Nothing yet.<br>Prompts appear here as the customer talks.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="colhead"><h2>Still to cover</h2><span class="hint" id="gapcount"></span></div>
+      <div class="colbody" id="gaps"></div>
+    </div>
+  </div>
+  <div class="gate" id="gate">
+    <span class="k">Before you book</span>
+    <span class="msg" id="gatemsg"></span>
+  </div>
+  <div class="foot">
+    Phone on speaker beside the laptop. Click a line on the right to tick it off yourself.<br>
+    Nothing is recorded or sent anywhere &mdash; it stays in this tab and disappears when you close it.
+  </div>
+</div>
+<script>
+const SIGNALS=[
+ {id:"quotes",gap:"g_comp",t:["few quotes","other quotes","another quote","had a quote","three quotes","someone else","few people out","other mob","the other guy","comparing prices","getting quotes"],
+  say:"Ask who else is quoting. Get names."},
+ {id:"quality",gap:"g_style",t:["cheaper doesn't","cheaper doesnt","worth paying","pay a bit more","you get what you pay for","do it properly","do it once","do it right"],
+  say:"They'll pay for quality. Quote the better option, not the cheapest."},
+ {id:"partner",gap:"g_dm",t:["my husband","my wife","my partner","my other half","the wife","the hubby","run it past","talk to him about","talk to her about"],
+  say:"Get their partner's name. Will they be there on the day?"},
+ {id:"nobudget",gap:"g_budget",t:["no numbers","no idea what","ballpark","rough price","just want a price","what does it cost","how much would","give me a price"],
+  say:"Give a price range, then ask which end they're closer to."},
+ {id:"norush",gap:"g_time",t:["no hurry","no rush","not in a hurry","whenever suits","fit in with you","no real deadline","not going anywhere"],
+  say:"No deadline. Tell them how long template-to-install takes."},
+ {id:"deadline",gap:"g_time",t:["before christmas","before the party","going on the market","we're selling","family coming","settlement","by the end of","in time for"],
+  say:"They've got a date. Check it's actually achievable before you promise."},
+ {id:"expensive",t:["more expensive","dearer than","cheaper elsewhere","bit steep","that's a lot","more than i thought","out of our range"],
+  say:"Ask: if both quotes were the same price, who would you choose? Then ask why."},
+ {id:"think",t:["think about it","have a think","get back to you","let you know","sleep on it"],
+  say:"Don't argue. Say you'll be here when they're ready, and leave it."},
+ {id:"badtradie",t:["didn't turn up","didnt turn up","never called back","never got back","stuffed us around","the last guy","wouldn't listen","wouldnt listen","numskull","numbskull","still waiting","took forever"],
+  say:"Bad tradie story. This is your opening \u2014 tell them how you'd do it differently."},
+ {id:"pricey",t:["so dear","so expensive","gone mental","everything's gone up","can't afford","cant afford","bit tight","watching every"],
+  say:"Money worry. Check it against what they said about quality."},
+ {id:"looking",gap:"g_look",t:["saw online","been looking","showroom","pinterest","instagram","saw your ad","been researching","houzz"],
+  say:"Ask where else they've been looking."},
+ {id:"whynow",gap:"g_why",t:["just had","we had our","new doors","just painted","renovating","just moved","decided to stay","kids moved out","kids have gone"],
+  say:"Ask why now, and not six months ago."},
+ {id:"feelings",t:["looks tired","looks dated","sick of it","hate it","embarrassed","feature of the house","main hub","heart of the home","had its day","love that"],
+  say:"Write their exact words down. Use them in the proposal."},
+ {id:"sink",gap:"g_sink",t:["the sink","new tap","undermount","drop in sink","double bowl"],
+  say:"Ask about the sink. Undermount or drop-in changes the price."},
+ {id:"splash",gap:"g_splash",t:["splashback","tiles behind","the grout","regrout"],
+  say:"Splashback in or out? It decides your benchtop thickness."},
+ {id:"cooktop",t:["cooktop","the stove","new oven","induction","gas burner","rangehood"],
+  say:"Ask if the cooktop's being replaced. Changes the cutout and the electrician."},
+ {id:"diy",t:["rip it out ourselves","do it ourselves","my son can","my mate can","we'll take it off","pull it off myself"],
+  say:"They want to DIY the removal. Explain the warranty risk \u2014 one trade, one warranty."},
+ {id:"vague",t:["it's all right","its all right","it's fine","its fine","not too bad","does the job","it's functional"],
+  say:"Ask: when you say that, can you give me an example?"}
+];
+const LANG=[
+ {id:"l_quote",t:["a quote","the quote","quote you","quote it","quoting","free quote"],
+  say:"You said \u201Cquote\u201D. Say \u201Cproposal\u201D."},
+ {id:"l_follow",t:["just following up","checking in","any questions","just checking","touching base"],
+  say:"Don't say that. Try: does it make sense to ___ so you can ___"}
+];
+const GAPS=[
+ {id:"g_budget",label:"Budget range given",p:1,block:1},
+ {id:"g_comp",label:"Who else is quoting",p:1,block:1},
+ {id:"g_dm",label:"Decision maker named",p:1,block:1},
+ {id:"g_time",label:"Timeframe",p:1,block:1},
+ {id:"g_style",label:"Right vs cheap",p:1},
+ {id:"g_why",label:"Why now",p:2},
+ {id:"g_look",label:"Where else they've looked",p:2},
+ {id:"g_sink",label:"Sink type",p:2},
+ {id:"g_splash",label:"Splashback in or out",p:2},
+ {id:"g_next",label:"Next step booked",p:1}
+];
+const BOOKING=["monday","tuesday","wednesday","thursday","friday","saturday","next week",
+ "the week of","o'clock","oclock","half past","in the morning","put you in"];
+let done={},fired={},t0=null,tick=null,rec=null,listening=false,gateHot=false;
+const $=id=>document.getElementById(id);
+const mmss=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+const stamp=()=>t0?mmss(Math.floor((Date.now()-t0)/1000)):"00:00";
+function renderGaps(){
+  const open=GAPS.filter(g=>!done[g.id]);
+  $("gapcount").textContent=open.length+" of "+GAPS.length+" left";
+  $("gaps").innerHTML=GAPS.map(g=>
+    '<button class="gap '+(done[g.id]?'done':'')+' '+(g.p===2?'p2':'')+'" data-g="'+g.id+'">'+
+    '<span class="box">'+(done[g.id]?'\u2713':'')+'</span><span class="label">'+g.label+'</span></button>').join("");
+  [...document.querySelectorAll('.gap')].forEach(b=>b.onclick=()=>{done[b.dataset.g]=!done[b.dataset.g];renderGaps()});
+  const blocked=GAPS.filter(g=>g.block&&!done[g.id]);
+  const gate=$("gate");
+  if(!blocked.length){gate.className="gate clear";$("gatemsg").textContent="All clear \u2014 book it."}
+  else{gate.className="gate"+(gateHot?" hot":"");
+    $("gatemsg").textContent=blocked.map(g=>g.label).join("  \u00B7  ")}
+}
+function fire(say,heard,isLang){
+  const e=$("sigempty");if(e)e.remove();
+  const el=document.createElement("div");
+  el.className="sig"+(isLang?" lang":"");
+  el.innerHTML='<div class="do">'+say+'</div><div class="heard">\u201C'+heard+
+    '\u201D <span class="at">'+stamp()+'</span></div>';
+  $("sigs").prepend(el);
+  while($("sigs").children.length>6)$("sigs").lastElementChild.remove();
+}
+function scan(text){
+  const s=" "+text.toLowerCase().replace(/[^a-z0-9'\s]/g," ").replace(/\s+/g," ")+" ";
+  for(const c of SIGNALS){
+    if(fired[c.id])continue;
+    if(c.t.some(p=>s.includes(" "+p)||s.includes(p+" "))){
+      fired[c.id]=1;fire(c.say,text.trim(),false);
+      if(c.gap)done[c.gap]=1;
+    }
+  }
+  for(const c of LANG){
+    if(fired[c.id])continue;
+    if(c.t.some(p=>s.includes(p))){fired[c.id]=1;fire(c.say,text.trim(),true)}
+  }
+  if(BOOKING.some(p=>s.includes(p)))gateHot=GAPS.some(g=>g.block&&!done[g.id]);
+  renderGaps();
+}
+function start(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){$("micstate").textContent="Needs Chrome";return}
+  if(listening){stop();return}
+  rec=new SR();rec.continuous=true;rec.interimResults=false;rec.lang="en-AU";
+  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)
+    if(e.results[i].isFinal)scan(e.results[i][0].transcript)};
+  rec.onerror=e=>{if(e.error==="not-allowed"){$("micstate").textContent="Mic blocked";stop()}};
+  rec.onend=()=>{if(listening){try{rec.start()}catch(_){}}};
+  try{rec.start()}catch(_){}
+  listening=true;t0=t0||Date.now();
+  $("micwrap").classList.add("live");$("micstate").textContent="Listening";
+  $("startbtn").textContent="Stop";$("startbtn").classList.remove("go");
+  clearInterval(tick);
+  tick=setInterval(()=>$("timer").textContent=mmss(Math.floor((Date.now()-t0)/1000)),500);
+}
+function stop(){
+  listening=false;if(rec)try{rec.stop()}catch(_){}
+  $("micwrap").classList.remove("live");
+  if($("micstate").textContent==="Listening")$("micstate").textContent="Paused";
+  $("startbtn").textContent="Resume";$("startbtn").classList.add("go");
+  clearInterval(tick);
+}
+$("startbtn").onclick=start;
+$("resetbtn").onclick=()=>{
+  stop();done={};fired={};gateHot=false;t0=null;
+  $("timer").textContent="00:00";$("micstate").textContent="Not listening";
+  $("startbtn").textContent="Start call";
+  $("sigs").innerHTML='<div class="empty" id="sigempty">Nothing yet.<br>Prompts appear here as the customer talks.</div>';
+  renderGaps();
+};
+renderGaps();
+</script>
+</body>
+</html>
