@@ -234,28 +234,69 @@ function scan(text){
   if(BOOKING.some(p=>s.includes(p)))gateHot=GAPS.some(g=>g.block&&!done[g.id]);
   renderGaps();
 }
+let restartT=null,watchdog=null,lastHeard=0;
+function hearBadge(txt){
+  let el=$("heard");
+  if(!el){el=document.createElement("span");el.id="heard";
+    el.style.cssText="font-size:12.5px;color:var(--mute);font-style:italic;max-width:300px;"+
+      "overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+    $("micwrap").after(el);}
+  el.textContent=txt;
+}
+function makeRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const r=new SR();
+  r.continuous=true;r.interimResults=true;r.lang="en-AU";
+  r.onresult=e=>{
+    lastHeard=Date.now();
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const txt=e.results[i][0].transcript;
+      if(e.results[i].isFinal){scan(txt);hearBadge("")}
+      else hearBadge(txt.slice(-70));
+    }
+  };
+  r.onspeechstart=()=>{lastHeard=Date.now()};
+  r.onerror=ev=>{
+    if(ev.error==="not-allowed"||ev.error==="service-not-allowed"){
+      $("micstate").textContent="Mic blocked";stop();}
+  };
+  r.onend=()=>{if(listening)restartSoon()};
+  return r;
+}
+function restartSoon(){
+  clearTimeout(restartT);
+  restartT=setTimeout(()=>{
+    if(!listening)return;
+    try{rec=makeRec();rec.start();lastHeard=Date.now()}
+    catch(_){restartSoon()}
+  },300);
+}
 function start(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){$("micstate").textContent="Needs Chrome";return}
   if(listening){stop();return}
-  rec=new SR();rec.continuous=true;rec.interimResults=false;rec.lang="en-AU";
-  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)
-    if(e.results[i].isFinal)scan(e.results[i][0].transcript)};
-  rec.onerror=e=>{if(e.error==="not-allowed"){$("micstate").textContent="Mic blocked";stop()}};
-  rec.onend=()=>{if(listening){try{rec.start()}catch(_){}}};
-  try{rec.start()}catch(_){}
-  listening=true;t0=t0||Date.now();
+  listening=true;t0=t0||Date.now();lastHeard=Date.now();
+  try{rec=makeRec();rec.start()}catch(_){restartSoon()}
   $("micwrap").classList.add("live");$("micstate").textContent="Listening";
   $("startbtn").textContent="Stop";$("startbtn").classList.remove("go");
   clearInterval(tick);
   tick=setInterval(()=>$("timer").textContent=mmss(Math.floor((Date.now()-t0)/1000)),500);
+  clearInterval(watchdog);
+  watchdog=setInterval(()=>{
+    if(listening&&Date.now()-lastHeard>12000){
+      lastHeard=Date.now();
+      if(rec){rec.onend=null;try{rec.stop()}catch(_){}}
+      restartSoon();
+    }
+  },4000);
 }
 function stop(){
-  listening=false;if(rec)try{rec.stop()}catch(_){}
+  listening=false;clearTimeout(restartT);clearInterval(watchdog);
+  if(rec){rec.onend=null;try{rec.stop()}catch(_){}}
   $("micwrap").classList.remove("live");
   if($("micstate").textContent==="Listening")$("micstate").textContent="Paused";
   $("startbtn").textContent="Resume";$("startbtn").classList.add("go");
-  clearInterval(tick);
+  clearInterval(tick);hearBadge("");
 }
 $("startbtn").onclick=start;
 $("resetbtn").onclick=()=>{
