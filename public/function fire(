@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-:root{
+  :root{
   --bg:#F2F3F1; --panel:#FFFFFF; --sunk:#EAECE9;
   --ink:#191C1A; --mute:#6A716C; --line:#DEE2DD;
   --accent:#2D5B7A; --open:#B3541E; --open-soft:#FBEDE4;
@@ -101,6 +101,9 @@ button.go:hover{opacity:.88;color:var(--panel)}
 .gate.hot .msg{color:var(--alert)}
 .gate.clear .msg{color:var(--done)}
 .foot{font-size:13px;color:var(--mute);text-align:center;line-height:1.6}
+.sig .ask{margin-top:7px;padding:8px 11px;border-radius:7px;background:var(--sunk);
+  border-left:2px solid var(--accent);font-size:15px;line-height:1.4;color:var(--ink)}
+.sig.lang .ask{border-left-color:var(--alert)}
 </style>
 </head>
 <body>
@@ -136,47 +139,67 @@ button.go:hover{opacity:.88;color:var(--panel)}
 <script>
 const SIGNALS=[
  {id:"quotes",gap:"g_comp",t:["few quotes","other quotes","another quote","had a quote","three quotes","someone else","few people out","other mob","the other guy","comparing prices","getting quotes"],
-  say:"Ask who else is quoting. Get names."},
+  say:"Ask who else is quoting. Get names.",
+  ask:"Just so I know what I'm up against \u2014 who else have you got coming out to look at it?"},
  {id:"quality",gap:"g_style",t:["cheaper doesn't","cheaper doesnt","worth paying","pay a bit more","you get what you pay for","do it properly","do it once","do it right"],
-  say:"They'll pay for quality. Quote the better option, not the cheapest."},
+  say:"They'll pay for quality. Anchor at the top, not the bottom.",
+  ask:"That tells me a lot. Most people who say that end up nearer the top of the range than the bottom \u2014 does that sound like you?"},
  {id:"partner",gap:"g_dm",t:["my husband","my wife","my partner","my other half","the wife","the hubby","run it past","talk to him about","talk to her about"],
-  say:"Get their partner's name. Will they be there on the day?"},
+  say:"Get their name. Will they be there on the day?",
+  ask:"And what's your husband's name? Will he be around when I come out? Worth him being there so you're not relaying it all second-hand."},
  {id:"nobudget",gap:"g_budget",t:["no numbers","no idea what","ballpark","rough price","just want a price","what does it cost","how much would","give me a price"],
-  say:"Give a price range, then ask which end they're closer to."},
+  say:"Give a range, then ask which end.",
+  ask:"Depending on how elaborate the stone is, these can range anywhere from about $8,000 to $16,000. Which end do you think you'd be closer to?"},
  {id:"norush",gap:"g_time",t:["no hurry","no rush","not in a hurry","whenever suits","fit in with you","no real deadline","not going anywhere"],
-  say:"No deadline. Tell them how long template-to-install takes."},
+  say:"No deadline. Give them the calendar reality.",
+  ask:"No rush is fine. Just so it's on your radar \u2014 the kitchen's out of action 10 to 18 days once we start, so it's worth picking a stretch that suits you."},
  {id:"deadline",gap:"g_time",t:["before christmas","before the party","going on the market","we're selling","family coming","settlement","by the end of","in time for"],
-  say:"They've got a date. Check it's actually achievable before you promise."},
+  say:"They've got a date. Check it's achievable now.",
+  ask:"Let me make sure that's doable \u2014 the kitchen's out of action 10 to 18 days. When do you need to be finished by?"},
  {id:"expensive",t:["more expensive","dearer than","cheaper elsewhere","bit steep","that's a lot","more than i thought","out of our range"],
-  say:"Ask: if both quotes were the same price, who would you choose? Then ask why."},
+  say:"Flip it. Don't defend the price.",
+  ask:"Can I ask you something \u2014 if both quotes were exactly the same price, who would you go with? \u2026 And why's that?"},
  {id:"think",t:["think about it","have a think","get back to you","let you know","sleep on it"],
-  say:"Don't argue. Say you'll be here when they're ready, and leave it."},
+  say:"Don't argue. Leave the door open.",
+  ask:"That's completely fine. I'll be here when you're ready to get the kitchen sorted."},
  {id:"badtradie",t:["didn't turn up","didnt turn up","never called back","never got back","stuffed us around","the last guy","wouldn't listen","wouldnt listen","numskull","numbskull","still waiting","took forever"],
-  say:"Bad tradie story. This is your opening \u2014 tell them how you'd do it differently."},
+  say:"Bad tradie story. This is your opening.",
+  ask:"That's exactly why I run it the way I do. Can I tell you what actually happens on my jobs?"},
  {id:"pricey",t:["so dear","so expensive","gone mental","everything's gone up","can't afford","cant afford","bit tight","watching every"],
-  say:"Money worry. Check it against what they said about quality."},
+  say:"Money worry. Test it against what they said about quality.",
+  ask:"Everything's gone up, hasn't it. Where does the kitchen sit against the other things you're weighing up?"},
  {id:"looking",gap:"g_look",t:["saw online","been looking","showroom","pinterest","instagram","saw your ad","been researching","houzz"],
-  say:"Ask where else they've been looking."},
+  say:"Find out where else they've been.",
+  ask:"Where else have you been looking? Been into any showrooms yet?"},
  {id:"whynow",gap:"g_why",t:["just had","we had our","new doors","just painted","renovating","just moved","decided to stay","kids moved out","kids have gone"],
-  say:"Ask why now, and not six months ago."},
+  say:"Get the trigger. Pause after 'right now'.",
+  ask:"What was it that made you start looking into new benchtops right now\u2026 as opposed to, say, six months from now?"},
  {id:"feelings",t:["looks tired","looks dated","sick of it","hate it","embarrassed","feature of the house","main hub","heart of the home","had its day","love that"],
-  say:"Write their exact words down. Use them in the proposal."},
+  say:"Write their exact words down. Use them in the proposal.",
+  ask:"When you picture it finished \u2014 what does it look like? What's the feeling you're going for?"},
  {id:"sink",gap:"g_sink",t:["the sink","new tap","undermount","drop in sink","double bowl"],
-  say:"Ask about the sink. Undermount or drop-in changes the price."},
+  say:"Sink type moves the price.",
+  ask:"And the sink \u2014 keeping the existing one or putting a new one in? Undermount, or sitting on top?"},
  {id:"splash",gap:"g_splash",t:["splashback","tiles behind","the grout","regrout"],
-  say:"Splashback in or out? It decides your benchtop thickness."},
+  say:"In or out? It decides your thickness.",
+  ask:"Are we doing anything with the splashback? It changes what thickness we can go to, so worth settling now."},
  {id:"cooktop",t:["cooktop","the stove","new oven","induction","gas burner","rangehood"],
-  say:"Ask if the cooktop's being replaced. Changes the cutout and the electrician."},
+  say:"Changes the cutout and the electrician.",
+  ask:"And is the cooktop staying, or is that getting replaced at the same time?"},
  {id:"diy",t:["rip it out ourselves","do it ourselves","my son can","my mate can","we'll take it off","pull it off myself"],
-  say:"They want to DIY the removal. Explain the warranty risk \u2014 one trade, one warranty."},
+  say:"Explain the warranty risk. One trade, one warranty.",
+  ask:"I can do it that way. Only thing worth knowing \u2014 if something chips or the cabinets cop damage on the way out, that sits with you rather than me."},
  {id:"vague",t:["it's all right","its all right","it's fine","its fine","not too bad","does the job","it's functional"],
-  say:"Ask: when you say that, can you give me an example?"}
+  say:"Dig. Don't accept the vague answer.",
+  ask:"When you say it's all right \u2014 can you give me an example of what you mean by that?"}
 ];
 const LANG=[
  {id:"l_quote",t:["a quote","the quote","quote you","quote it","quoting","free quote"],
-  say:"You said \u201Cquote\u201D. Say \u201Cproposal\u201D."},
+  say:"You said \u201Cquote\u201D. Say \u201Cproposal\u201D.",
+  ask:"\u201CI'll put a proposal together for you.\u201D"},
  {id:"l_follow",t:["just following up","checking in","any questions","just checking","touching base"],
-  say:"Don't say that. Try: does it make sense to ___ so you can ___"}
+  say:"Low-status phrasing. Aim at the outcome instead.",
+  ask:"\u201CAs promised \u2014 calling to see if it makes sense to get you booked in for templating.\u201D"}
 ];
 const GAPS=[
  {id:"g_budget",label:"Budget range given",p:1,block:1},
@@ -209,27 +232,28 @@ function renderGaps(){
   else{gate.className="gate"+(gateHot?" hot":"");
     $("gatemsg").textContent=blocked.map(g=>g.label).join("  \u00B7  ")}
 }
-function fire(say,heard,isLang){
+function fire(c,heard,isLang){
   const e=$("sigempty");if(e)e.remove();
   const el=document.createElement("div");
   el.className="sig"+(isLang?" lang":"");
-  el.innerHTML='<div class="do">'+say+'</div><div class="heard">\u201C'+heard+
-    '\u201D <span class="at">'+stamp()+'</span></div>';
+  el.innerHTML='<div class="do">'+c.say+'</div>'+
+    (c.ask?'<div class="ask">'+c.ask+'</div>':'')+
+    '<div class="heard">\u201C'+heard+'\u201D <span class="at">'+stamp()+'</span></div>';
   $("sigs").prepend(el);
-  while($("sigs").children.length>6)$("sigs").lastElementChild.remove();
+  while($("sigs").children.length>4)$("sigs").lastElementChild.remove();
 }
 function scan(text){
   const s=" "+text.toLowerCase().replace(/[^a-z0-9'\s]/g," ").replace(/\s+/g," ")+" ";
   for(const c of SIGNALS){
     if(fired[c.id])continue;
     if(c.t.some(p=>s.includes(" "+p)||s.includes(p+" "))){
-      fired[c.id]=1;fire(c.say,text.trim(),false);
+      fired[c.id]=1;fire(c,text.trim(),false);
       if(c.gap)done[c.gap]=1;
     }
   }
   for(const c of LANG){
     if(fired[c.id])continue;
-    if(c.t.some(p=>s.includes(p))){fired[c.id]=1;fire(c.say,text.trim(),true)}
+    if(c.t.some(p=>s.includes(p))){fired[c.id]=1;fire(c,text.trim(),true)}
   }
   if(BOOKING.some(p=>s.includes(p)))gateHot=GAPS.some(g=>g.block&&!done[g.id]);
   renderGaps();
